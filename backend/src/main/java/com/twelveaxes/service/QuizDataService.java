@@ -1,0 +1,605 @@
+package com.twelveaxes.service;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.twelveaxes.model.Book;
+import com.twelveaxes.model.AnswerOption;
+import com.twelveaxes.model.ArchetypeQuestion;
+import com.twelveaxes.model.AnswerValue;
+import com.twelveaxes.model.Axis;
+import com.twelveaxes.model.Country;
+import com.twelveaxes.model.CountryProfile;
+import com.twelveaxes.model.Party;
+import com.twelveaxes.model.PartyProfile;
+import com.twelveaxes.model.GlossaryEntry;
+import com.twelveaxes.model.Ideology;
+import com.twelveaxes.model.IdeologyProfile;
+import com.twelveaxes.model.Personality;
+import com.twelveaxes.model.PersonalityProfile;
+import com.twelveaxes.model.Question;
+import com.twelveaxes.model.QuestionHelpEntry;
+import com.twelveaxes.model.QuizPayload;
+import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+public class QuizDataService {
+    public static final String SHORT_VARIANT = "short";
+    public static final String EXTENDED_VARIANT = "extended";
+    public static final String EXTREME_VARIANT = "extreme";
+
+    public static final String LANG_PT = "pt";
+    public static final String LANG_EN = "en";
+
+    private final ObjectMapper objectMapper;
+    private Map<String, LocaleBundle> bundles;
+    private Map<String, IdeologyProfile> ideologyProfiles;
+    private Map<String, CountryProfile> countryProfiles;
+    private Map<String, PartyProfile> partyProfiles;
+    private Map<String, PersonalityProfile> personalityProfiles;
+    private Map<String, Book> books;
+    private List<ArchetypeQuestion> archetypeQuestions;
+
+    // Textos por locale: profiles/vetores são independentes de idioma e ficam fora do bundle.
+    private record LocaleBundle(
+            List<Axis> axes,
+            List<Question> questions,
+            List<Ideology> ideologies,
+            Map<String, Ideology> ideologiesById,
+            List<Country> countries,
+            Map<String, Country> countriesById,
+            List<Personality> personalities,
+            Map<String, Personality> personalitiesById,
+            List<Party> parties,
+            Map<String, Party> partiesById
+    ) {
+        static LocaleBundle of(
+                List<Axis> axes,
+                List<Question> questions,
+                List<Ideology> ideologies,
+                List<Country> countries,
+                List<Personality> personalities,
+                List<Party> parties
+        ) {
+            Map<String, Country> countriesById =
+                    countries.stream().collect(Collectors.toUnmodifiableMap(Country::id, Function.identity()));
+            // O nome do pais vem do mesmo idioma do bundle, para o front mostrar "Partido, Pais".
+            List<Party> resolvedParties = parties.stream()
+                    .map(party -> {
+                        Country country = countriesById.get(party.countryId());
+                        return country == null ? party : party.withCountry(country.name(), country.flagPath());
+                    })
+                    .toList();
+            return new LocaleBundle(
+                    axes,
+                    questions,
+                    ideologies,
+                    ideologies.stream().collect(Collectors.toUnmodifiableMap(Ideology::id, Function.identity())),
+                    countries,
+                    countriesById,
+                    personalities,
+                    personalities.stream().collect(Collectors.toUnmodifiableMap(Personality::id, Function.identity())),
+                    resolvedParties,
+                    resolvedParties.stream().collect(Collectors.toUnmodifiableMap(Party::id, Function.identity()))
+            );
+        }
+    }
+
+    public QuizDataService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    @PostConstruct
+    void loadData() throws IOException {
+        List<Axis> axes = readJson("data/axes.json", new TypeReference<>() {});
+        List<Question> questions = QuestionHelpResolver.attach(
+                GlossaryResolver.attach(
+                        readJson("data/questions-pool.json", new TypeReference<>() {}),
+                        readJson("data/glossary.json", new TypeReference<List<GlossaryEntry>>() {}),
+                        "glossary.json"
+                ),
+                readOptionalJson("data/question-help.json", new TypeReference<List<QuestionHelpEntry>>() {}),
+                "question-help.json"
+        );
+        List<Ideology> ideologies = readJson("data/ideologies.json", new TypeReference<>() {});
+        List<Country> countries = readJson("data/countries.json", new TypeReference<>() {});
+        List<Personality> personalities = readJson("data/personalities.json", new TypeReference<>() {});
+        List<Party> parties = readOptionalJson("data/parties.json", new TypeReference<List<Party>>() {});
+
+        // Mapas na ordem dos JSONs: toUnmodifiableMap embaralha a iteracao a cada
+        // JVM, o que mudava os exemplos da tensao entre reinicios do servidor.
+        List<IdeologyProfile> profiles = readJson("data/ideology-profiles.json", new TypeReference<>() {});
+        ideologyProfiles = profiles.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(IdeologyProfile::ideologyId, Function.identity(), (a, b) -> b, java.util.LinkedHashMap::new),
+                        java.util.Collections::unmodifiableMap));
+        List<CountryProfile> countryProfileList = readJson("data/countries-profiles.json", new TypeReference<>() {});
+        countryProfiles = countryProfileList.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(CountryProfile::countryId, Function.identity(), (a, b) -> b, java.util.LinkedHashMap::new),
+                        java.util.Collections::unmodifiableMap));
+        List<PersonalityProfile> personalityProfileList = readJson("data/personality-profiles.json", new TypeReference<>() {});
+        personalityProfiles = personalityProfileList.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(PersonalityProfile::personalityId, Function.identity(), (a, b) -> b, java.util.LinkedHashMap::new),
+                        java.util.Collections::unmodifiableMap));
+
+        List<PartyProfile> partyProfileList =
+                readOptionalJson("data/parties-profiles.json", new TypeReference<List<PartyProfile>>() {});
+        partyProfiles = partyProfileList.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(PartyProfile::partyId, Function.identity(), (a, b) -> b, java.util.LinkedHashMap::new),
+                        java.util.Collections::unmodifiableMap));
+
+        archetypeQuestions = readJson("data/archetype-questions.json", new TypeReference<>() {});
+        validateArchetypeQuestions(axes);
+
+        LocaleBundle pt = LocaleBundle.of(axes, questions, ideologies, countries, personalities, parties);
+        LocaleBundle en = buildEnglishBundle(pt);
+        bundles = Map.of(LANG_PT, pt, LANG_EN, en);
+
+        List<Book> bookList = readJson("data/books.json", new TypeReference<>() {});
+        List<String> unknownBookAuthors = bookList.stream()
+                .map(Book::personalityId)
+                .filter(id -> !pt.personalitiesById().containsKey(id))
+                .toList();
+        if (!unknownBookAuthors.isEmpty()) {
+            throw new IllegalStateException("books.json cita personalidades inexistentes: " + unknownBookAuthors);
+        }
+        books = bookList.stream()
+                .collect(Collectors.toUnmodifiableMap(Book::personalityId, Function.identity()));
+
+        validateCountryProfiles(pt);
+        validateIdeologyProfiles(pt);
+        validateIdeologyPersonalityLinks(pt);
+        validatePersonalityProfiles(pt);
+        validateParties(pt);
+    }
+
+    // Overlays em data/i18n/en/*.json trazem só os campos de texto, chaveados por id.
+    // Item sem tradução (ou arquivo ausente) cai no texto PT — nada quebra.
+    private LocaleBundle buildEnglishBundle(LocaleBundle pt) throws IOException {
+        Map<String, Map<String, String>> axesTr = readOverlay("data/i18n/en/axes.json");
+        Map<String, Map<String, String>> questionsTr = readOverlay("data/i18n/en/questions.json");
+        Map<String, Map<String, String>> ideologiesTr = readOverlay("data/i18n/en/ideologies.json");
+        Map<String, Map<String, String>> countriesTr = readOverlay("data/i18n/en/countries.json");
+        Map<String, Map<String, String>> personalitiesTr = readOverlay("data/i18n/en/personalities.json");
+        Map<String, Map<String, String>> partiesTr = readOverlay("data/i18n/en/parties.json");
+
+        List<Axis> axes = pt.axes().stream().map(axis -> {
+            Map<String, String> tr = axesTr.get(axis.id());
+            if (tr == null) return axis;
+            return new Axis(
+                    axis.id(),
+                    tr.getOrDefault("label", axis.label()),
+                    tr.getOrDefault("leftPole", axis.leftPole()),
+                    tr.getOrDefault("rightPole", axis.rightPole()),
+                    axis.leftColor(),
+                    axis.rightColor()
+            );
+        }).toList();
+
+        List<Question> translatedQuestions = pt.questions().stream().map(question -> {
+            Map<String, String> tr = questionsTr.get(question.id());
+            if (tr == null || tr.get("text") == null) return question;
+            return question.withText(tr.get("text"));
+        }).toList();
+        // Os termos são procurados no texto traduzido; sem overlay EN do glossário, não há tooltip.
+        // Idem para a explicação das perguntas: pergunta sem entrada EN fica sem ela, nunca em PT.
+        List<Question> questions = QuestionHelpResolver.attach(
+                GlossaryResolver.attach(
+                        translatedQuestions,
+                        readOptionalJson("data/i18n/en/glossary.json", new TypeReference<List<GlossaryEntry>>() {}),
+                        "i18n/en/glossary.json"
+                ),
+                readOptionalJson("data/i18n/en/question-help.json", new TypeReference<List<QuestionHelpEntry>>() {}),
+                "i18n/en/question-help.json"
+        );
+
+        List<Ideology> ideologies = pt.ideologies().stream().map(ideology -> {
+            Map<String, String> tr = ideologiesTr.get(ideology.id());
+            if (tr == null) return ideology;
+            return new Ideology(
+                    ideology.id(),
+                    tr.getOrDefault("name", ideology.name()),
+                    tr.getOrDefault("category", ideology.category()),
+                    tr.getOrDefault("description", ideology.description()),
+                    tr.getOrDefault("phrase", ideology.phrase()),
+                    ideology.countryId(),
+                    ideology.personalityId(),
+                    ideology.vector(),
+                    ideology.religions()
+            );
+        }).toList();
+
+        List<Country> countries = pt.countries().stream().map(country -> {
+            Map<String, String> tr = countriesTr.get(country.id());
+            if (tr == null) return country;
+            return new Country(
+                    country.id(),
+                    tr.getOrDefault("name", country.name()),
+                    tr.getOrDefault("category", country.category()),
+                    tr.getOrDefault("description", country.description()),
+                    country.flagPath(),
+                    country.flagKind(),
+                    country.flagSourceName(),
+                    country.flagSourceUrl(),
+                    country.flagNote(),
+                    country.historical(),
+                    country.period(),
+                    country.vector(),
+                    country.religions()
+            );
+        }).toList();
+
+        List<Personality> personalities = pt.personalities().stream().map(personality -> {
+            Map<String, String> tr = personalitiesTr.get(personality.id());
+            if (tr == null) return personality;
+            return new Personality(
+                    personality.id(),
+                    tr.getOrDefault("name", personality.name()),
+                    tr.getOrDefault("role", personality.role()),
+                    personality.category(),
+                    personality.lifespan(),
+                    tr.getOrDefault("description", personality.description()),
+                    personality.imagePath(),
+                    personality.imageSourceName(),
+                    personality.imageSourceUrl(),
+                    personality.imageNote(),
+                    personality.religions()
+            );
+        }).toList();
+
+        List<Party> parties = pt.parties().stream().map(party -> {
+            Map<String, String> tr = partiesTr.get(party.id());
+            if (tr == null) return party;
+            return party.withText(
+                    tr.getOrDefault("name", party.name()),
+                    tr.getOrDefault("category", party.category()),
+                    tr.getOrDefault("description", party.description()));
+        }).toList();
+
+        return LocaleBundle.of(axes, questions, ideologies, countries, personalities, parties);
+    }
+
+    private Map<String, Map<String, String>> readOverlay(String path) throws IOException {
+        ClassPathResource resource = new ClassPathResource(path);
+        if (!resource.exists()) {
+            return Map.of();
+        }
+        List<Map<String, String>> items;
+        try (InputStream input = resource.getInputStream()) {
+            items = objectMapper.readValue(input, new TypeReference<>() {});
+        }
+        return items.stream().collect(Collectors.toUnmodifiableMap(item -> item.get("id"), Function.identity()));
+    }
+
+    public static String normalizeLang(String lang) {
+        if (lang == null) {
+            return LANG_PT;
+        }
+        return switch (lang.trim().toLowerCase()) {
+            case LANG_EN, "en-us", "en-gb" -> LANG_EN;
+            default -> LANG_PT;
+        };
+    }
+
+    private LocaleBundle bundle(String lang) {
+        return bundles.get(normalizeLang(lang));
+    }
+
+    private void validateCountryProfiles(LocaleBundle pt) {
+        List<String> missing = pt.countries().stream()
+                .map(Country::id)
+                .filter(id -> !countryProfiles.containsKey(id))
+                .toList();
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException(
+                    "Todo pais precisa de um perfil em countries-profiles.json. Faltando: " + missing
+            );
+        }
+
+        List<String> unknown = countryProfiles.keySet().stream()
+                .filter(id -> !pt.countriesById().containsKey(id))
+                .toList();
+        if (!unknown.isEmpty()) {
+            throw new IllegalStateException(
+                    "countries-profiles.json aponta para paises inexistentes: " + unknown
+            );
+        }
+    }
+
+    private void validateIdeologyProfiles(LocaleBundle pt) {
+        List<String> missing = pt.ideologies().stream()
+                .map(Ideology::id)
+                .filter(id -> !ideologyProfiles.containsKey(id))
+                .toList();
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException(
+                    "Toda ideologia precisa de um perfil em ideology-profiles.json. Faltando: " + missing
+            );
+        }
+    }
+
+    private void validateIdeologyPersonalityLinks(LocaleBundle pt) {
+        List<String> broken = pt.ideologies().stream()
+                .filter(ideology -> ideology.personalityId() == null
+                        || ideology.personalityId().isBlank()
+                        || !pt.personalitiesById().containsKey(ideology.personalityId()))
+                .map(ideology -> ideology.id() + " -> " + ideology.personalityId())
+                .toList();
+        if (!broken.isEmpty()) {
+            throw new IllegalStateException(
+                    "Toda ideologia precisa de um personalityId que resolva para uma personalidade existente. Inválidos: " + broken
+            );
+        }
+    }
+
+    private void validatePersonalityProfiles(LocaleBundle pt) {
+        List<String> missing = pt.personalities().stream()
+                .map(Personality::id)
+                .filter(id -> !personalityProfiles.containsKey(id))
+                .toList();
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException(
+                    "Toda personalidade precisa de um perfil em personality-profiles.json. Faltando: " + missing
+            );
+        }
+    }
+
+    // Todo partido precisa de perfil com vetor, de um pais existente e de uma categoria valida;
+    // erro de digitacao no JSON nao pode passar em silencio.
+    private void validateParties(LocaleBundle pt) {
+        List<String> missingProfile = pt.parties().stream()
+                .map(Party::id)
+                .filter(id -> !partyProfiles.containsKey(id))
+                .toList();
+        if (!missingProfile.isEmpty()) {
+            throw new IllegalStateException(
+                    "Todo partido precisa de um perfil em parties-profiles.json. Faltando: " + missingProfile);
+        }
+        List<String> unknownProfile = partyProfiles.keySet().stream()
+                .filter(id -> !pt.partiesById().containsKey(id))
+                .toList();
+        if (!unknownProfile.isEmpty()) {
+            throw new IllegalStateException(
+                    "parties-profiles.json aponta para partidos inexistentes: " + unknownProfile);
+        }
+        List<String> brokenCountry = pt.parties().stream()
+                .filter(party -> party.countryId() == null || !pt.countriesById().containsKey(party.countryId()))
+                .map(party -> party.id() + " -> " + party.countryId())
+                .toList();
+        if (!brokenCountry.isEmpty()) {
+            throw new IllegalStateException(
+                    "Todo partido precisa de um countryId que resolva para um pais existente. Invalidos: "
+                            + brokenCountry);
+        }
+        List<String> brokenCategory = pt.parties().stream()
+                .filter(party -> !Party.CATEGORIES.contains(party.category()))
+                .map(party -> party.id() + " -> " + party.category())
+                .toList();
+        if (!brokenCategory.isEmpty()) {
+            throw new IllegalStateException(
+                    "Categoria de partido invalida (use " + Party.CATEGORIES + "): " + brokenCategory);
+        }
+    }
+
+    public QuizPayload getQuiz() {
+        return getQuiz(SHORT_VARIANT);
+    }
+
+    public QuizPayload getQuiz(String variant) {
+        return getQuiz(variant, LANG_PT);
+    }
+
+    public QuizPayload getQuiz(String variant, String lang) {
+        String normalizedVariant = normalizeVariant(variant);
+        String normalizedLang = normalizeLang(lang);
+        LocaleBundle data = bundle(normalizedLang);
+        int questionsPerAxis = switch (normalizedVariant) {
+            case EXTREME_VARIANT -> 0;
+            case EXTENDED_VARIANT -> 5;
+            default -> 3;
+        };
+        int questionCount = normalizedVariant.equals(EXTREME_VARIANT)
+                ? data.questions().size()
+                : questionsPerAxis * data.axes().size();
+        String description = normalizedLang.equals(LANG_EN)
+                ? "A quiz of " + questionCount + " questions to estimate your position on the 12 political axes."
+                : "Um quiz de " + questionCount + " perguntas para estimar sua posição nos 12 eixos políticos.";
+        return new QuizPayload(
+                "12 Axes",
+                description,
+                normalizedVariant,
+                questionCount,
+                questionsPerAxis,
+                data.axes(),
+                data.questions(),
+                answerOptions(normalizedLang),
+                archetypeQuestions.stream().map(question -> question.view(normalizedLang)).toList()
+        );
+    }
+
+    public List<ArchetypeQuestion> getArchetypeQuestions() {
+        return archetypeQuestions;
+    }
+
+    // Cada efeito precisa apontar para um eixo real com valor 0–100: um erro de
+    // digitação no JSON distorceria resultados em silêncio.
+    private void validateArchetypeQuestions(List<Axis> axes) {
+        java.util.Set<String> axisIds = axes.stream().map(Axis::id).collect(Collectors.toSet());
+        for (ArchetypeQuestion question : archetypeQuestions) {
+            for (ArchetypeQuestion.Option option : question.options()) {
+                option.effects().forEach((axisId, value) -> {
+                    if (!axisIds.contains(axisId) || value == null || value < 0 || value > 100) {
+                        throw new IllegalStateException("archetype-questions.json: efeito inválido em "
+                                + question.id() + "/" + option.id() + " -> " + axisId + "=" + value);
+                    }
+                });
+            }
+        }
+    }
+
+    public List<Axis> getAxes() {
+        return getAxes(LANG_PT);
+    }
+
+    public List<Axis> getAxes(String lang) {
+        return bundle(lang).axes();
+    }
+
+    public List<Question> getQuestions() {
+        return bundle(LANG_PT).questions();
+    }
+
+    public List<Question> getQuestions(String variant) {
+        normalizeVariant(variant);
+        return bundle(LANG_PT).questions();
+    }
+
+    public List<Question> getQuestionsForLang(String lang) {
+        return bundle(lang).questions();
+    }
+
+    public List<Ideology> getIdeologies() {
+        return getIdeologies(LANG_PT);
+    }
+
+    public List<Ideology> getIdeologies(String lang) {
+        return bundle(lang).ideologies();
+    }
+
+    public Ideology getIdeologyById(String id) {
+        return getIdeologyById(id, LANG_PT);
+    }
+
+    public Ideology getIdeologyById(String id, String lang) {
+        return bundle(lang).ideologiesById().get(id);
+    }
+
+    public Country getCountryById(String id) {
+        return getCountryById(id, LANG_PT);
+    }
+
+    public Country getCountryById(String id, String lang) {
+        return bundle(lang).countriesById().get(id);
+    }
+
+    public List<Personality> getPersonalities() {
+        return getPersonalities(LANG_PT);
+    }
+
+    public List<Personality> getPersonalities(String lang) {
+        return bundle(lang).personalities();
+    }
+
+    public Personality getPersonalityById(String id) {
+        return getPersonalityById(id, LANG_PT);
+    }
+
+    public Personality getPersonalityById(String id, String lang) {
+        return bundle(lang).personalitiesById().get(id);
+    }
+
+    public Map<String, Book> getBooks() {
+        return books;
+    }
+
+    public Map<String, IdeologyProfile> getIdeologyProfiles() {
+        return ideologyProfiles;
+    }
+
+    public List<Country> getCountries() {
+        return getCountries(LANG_PT);
+    }
+
+    public List<Country> getCountries(String lang) {
+        return bundle(lang).countries();
+    }
+
+    public Map<String, CountryProfile> getCountryProfiles() {
+        return countryProfiles;
+    }
+
+    public List<Party> getParties() {
+        return getParties(LANG_PT);
+    }
+
+    public List<Party> getParties(String lang) {
+        return bundle(lang).parties();
+    }
+
+    public Party getPartyById(String id, String lang) {
+        return bundle(lang).partiesById().get(id);
+    }
+
+    public Map<String, PartyProfile> getPartyProfiles() {
+        return partyProfiles;
+    }
+
+    public Map<String, PersonalityProfile> getPersonalityProfiles() {
+        return personalityProfiles;
+    }
+
+
+    private List<AnswerOption> answerOptions(String lang) {
+        return Arrays.stream(AnswerValue.values())
+                .map(value -> new AnswerOption(value, labelFor(value, lang), value.scoreTowardAgreement()))
+                .toList();
+    }
+
+    private String labelFor(AnswerValue value, String lang) {
+        if (LANG_EN.equals(lang)) {
+            return switch (value) {
+                case STRONGLY_AGREE -> "Strongly agree";
+                case AGREE -> "Agree";
+                case NEUTRAL -> "Neutral or It depends";
+                case DISAGREE -> "Disagree";
+                case STRONGLY_DISAGREE -> "Strongly disagree";
+            };
+        }
+        return switch (value) {
+            case STRONGLY_AGREE -> "Concordo totalmente";
+            case AGREE -> "Concordo";
+            case NEUTRAL -> "Neutro ou Depende";
+            case DISAGREE -> "Discordo";
+            case STRONGLY_DISAGREE -> "Discordo totalmente";
+        };
+    }
+
+    public String normalizeVariant(String variant) {
+        if (variant == null || variant.isBlank()) {
+            return SHORT_VARIANT;
+        }
+        return switch (variant.trim().toLowerCase()) {
+            case SHORT_VARIANT, "curta" -> SHORT_VARIANT;
+            case EXTENDED_VARIANT, "extensa" -> EXTENDED_VARIANT;
+            case EXTREME_VARIANT, "extrema", "240", "240questions" -> EXTREME_VARIANT;
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Versão de quiz inválida");
+        };
+    }
+
+    private <T> List<T> readOptionalJson(String path, TypeReference<List<T>> type) throws IOException {
+        if (!new ClassPathResource(path).exists()) {
+            return List.of();
+        }
+        return readJson(path, type);
+    }
+
+    private <T> T readJson(String path, TypeReference<T> type) throws IOException {
+        ClassPathResource resource = new ClassPathResource(path);
+        try (InputStream input = resource.getInputStream()) {
+            return objectMapper.readValue(input, type);
+        }
+    }
+}

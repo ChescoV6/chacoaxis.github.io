@@ -1,0 +1,367 @@
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from 'react';
+import { t } from '../../i18n';
+import { fetchCompare, fetchCompareCatalog } from '../../services/quizApi';
+import type { Axis, AxisResult, CompareDetail, CompareItem, CompareProfile, PersonalityMatch } from '../../types/quiz';
+import { compareAxes, summaryKinds, type CompareAxisRow } from '../../utils/compareAxes';
+import { resolveCountryFlagSrc } from '../../utils/countryFlags';
+import { resolvePartyLogoSrc } from '../../utils/partyLogos';
+import { resolveIdeologyColor } from '../../utils/ideologyColors';
+import { personalityInitials, resolvePersonalityImageSrc } from '../../utils/personalityImage';
+import { cleanName, peopleCompareUrl } from '../../utils/peopleCompare';
+import { profileReligions, type Religion } from '../../utils/religion';
+import { ArrowIcon, SafeImg } from '../editorial/primitives';
+import { AxisTagList } from '../compare/axisTags';
+import { searchItems } from '../../utils/compareSearch';
+import { InfoSheet } from './InfoSheet';
+import { Portrait } from './PersonalitiesSection';
+import { SheetMatch } from './SheetMatch';
+
+interface CompareSectionProps {
+  axes: Axis[];
+  results: Map<string, AxisResult>;
+  religion?: Religion | null;
+  /** Categoria da ideologia principal do usuário; define a cor do marcador "você". */
+  userCategory: string;
+  /** Personalidade mais compatível e a mais distante do usuário: os dois retratos do ícone da seção. */
+  closest?: PersonalityMatch | null;
+  farthest?: PersonalityMatch | null;
+}
+
+// A busca (nome exato, começo do nome, palavras, sem acento, hífen nem espaço) vive em utils/compareSearch.ts.
+export { searchItems } from '../../utils/compareSearch';
+
+// Personalidade = retrato; país = bandeira; partido/organização = logo 1:1; ideologia = bolinha na cor do espectro.
+export function ProfileFace({ item, className }: { item: CompareItem; className: string }) {
+  if (item.type === 'personality') {
+    return (
+      <SafeImg
+        className={className}
+        src={resolvePersonalityImageSrc(item.imagePath ?? undefined)}
+        alt={t.portraitAlt(item.name)}
+        fallback={personalityInitials(item.name)}
+      />
+    );
+  }
+  if (item.type === 'country') {
+    return (
+      <SafeImg
+        className={className}
+        src={resolveCountryFlagSrc(item.imagePath ?? '')}
+        alt={t.flagAlt(item.historical ? t.flagHistoricLabel : t.flagLabel, item.name)}
+        fallback={t.flagUnavailable}
+      />
+    );
+  }
+  if (item.type === 'party') {
+    return (
+      <SafeImg
+        className={className}
+        src={resolvePartyLogoSrc(item.imagePath ?? '')}
+        alt={item.name}
+        fallback={personalityInitials(item.name)}
+      />
+    );
+  }
+  const background = resolveIdeologyColor(item.category).base;
+  if (item.initials) {
+    return (
+      <span className={`${className} e-cmp-dot e-cmp-initials`} style={{ background }} role="img" aria-label={item.name}>
+        <b aria-hidden="true">{item.initials}</b>
+      </span>
+    );
+  }
+  return <span className={`${className} e-cmp-dot`} style={{ background }} aria-hidden="true" />;
+}
+
+interface CompareSearchFieldProps {
+  listId: string;
+  query: string;
+  options: CompareItem[];
+  /** Mostra "nenhum resultado" (a busca já tem catálogo e texto, mas nada casou). */
+  showEmpty: boolean;
+  onFocus: () => void;
+  onQueryChange: (value: string) => void;
+  onChoose: (item: CompareItem) => void;
+  inputRef?: Ref<HTMLInputElement>;
+  /** Texto do campo vazio; sem ele vale o padrão da busca. */
+  placeholder?: string;
+}
+
+/** Busca de perfis do catálogo (personalidades, países e ideologias), usada aqui e em /compare. */
+export function CompareSearchField({ listId, query, options, showEmpty, onFocus, onQueryChange, onChoose, inputRef, placeholder }: CompareSearchFieldProps) {
+  return (
+    <div className="e-cmp-field">
+      <input
+        ref={inputRef}
+        className="e-cmp-input"
+        type="search"
+        role="combobox"
+        aria-label={t.compareSearchLabel}
+        aria-expanded={options.length > 0}
+        aria-controls={listId}
+        placeholder={placeholder ?? t.compareSearchPlaceholder}
+        value={query}
+        autoComplete="off"
+        onFocus={onFocus}
+        onChange={(event) => onQueryChange(event.target.value)}
+      />
+      {options.length > 0 && (
+        <ul className="e-cmp-options" id={listId} role="listbox">
+          {options.map((item) => (
+            <li key={`${item.type}-${item.id}`} role="option" aria-selected={false}>
+              <button type="button" aria-label={t.compareOptionAria(item.name, t.compareTypeLabels[item.type])} onClick={() => onChoose(item)}>
+                <ProfileFace item={item} className="e-cmp-face" />
+                <span className="e-cmp-opt-text">
+                  <b>{item.name}</b>
+                  <em>{item.caption}</em>
+                </span>
+                <span className="e-tag e-tag-neutral">{t.compareTypeLabels[item.type]}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {showEmpty && <p className="e-cmp-empty">{t.compareNoResults}</p>}
+    </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg className="e-cmpa-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4.5 4.5" />
+    </svg>
+  );
+}
+
+export function CompareSection({ axes, results, religion, userCategory, closest, farthest }: CompareSectionProps) {
+  const [catalog, setCatalog] = useState<CompareItem[] | null>(null);
+  const [catalogReligion, setCatalogReligion] = useState<Religion | null | undefined>(undefined);
+  const [catalogError, setCatalogError] = useState(false);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<CompareItem | null>(null);
+  const [detail, setDetail] = useState<CompareDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const requestRef = useRef(0);
+  const detailCache = useRef(new Map<string, Promise<CompareDetail>>());
+
+  // O catálogo muda com a religião (perfis "only"), então recarrega se ela mudar.
+  useEffect(() => {
+    if (catalogReligion !== undefined && catalogReligion !== (religion ?? null)) {
+      setCatalog(null);
+      setCatalogReligion(undefined);
+      setSelected(null);
+    }
+  }, [religion, catalogReligion]);
+
+  const loadCatalog = () => {
+    if (catalog || catalogReligion !== undefined) return;
+    setCatalogReligion(religion ?? null);
+    setCatalogError(false);
+    fetchCompareCatalog(religion ?? null)
+      .then(setCatalog)
+      .catch(() => {
+        setCatalogError(true);
+        setCatalogReligion(undefined);
+      });
+  };
+
+  const options = useMemo(() => (catalog && !selected ? searchItems(catalog, query) : []), [catalog, query, selected]);
+  const userPercents = useMemo(() => axes.map((axis) => results.get(axis.id)?.leftPercent ?? 50), [axes, results]);
+
+  // A comparação começa a carregar assim que o perfil é escolhido, enquanto o usuário
+  // ainda vai até o botão; "Visualizar" só espera o que faltar (quase sempre nada).
+  const detailFor = (item: CompareItem): Promise<CompareDetail> => {
+    const key = `${item.type}:${item.id}:${userPercents.join(',')}`;
+    let pending = detailCache.current.get(key);
+    if (!pending) {
+      pending = fetchCompare(item.type, item.id, userPercents);
+      pending.catch(() => detailCache.current.delete(key));
+      detailCache.current.set(key, pending);
+    }
+    return pending;
+  };
+
+  const view = async () => {
+    if (!selected) return;
+    const request = ++requestRef.current;
+    setLoading(true);
+    setError(false);
+    try {
+      const next = await detailFor(selected);
+      if (request === requestRef.current) setDetail(next);
+    } catch {
+      if (request === requestRef.current) setError(true);
+    } finally {
+      if (request === requestRef.current) setLoading(false);
+    }
+  };
+
+  const choose = (item: CompareItem) => {
+    setSelected(item);
+    setQuery(item.name);
+    setError(false);
+    void detailFor(item).catch(() => undefined);
+  };
+
+  const showEmpty = Boolean(catalog) && !selected && query.trim().length > 0 && options.length === 0;
+
+  return (
+    <section className="e-panel e-ppl e-cmpa" id="comparar" data-reveal>
+      <div className="e-ppl-intro">
+        {(closest || farthest) && (
+          <span className="e-ppl-duo e-ppl-faces" aria-hidden="true">
+            {closest && <Portrait match={closest} className="e-ppl-face" />}
+            {farthest && <Portrait match={farthest} className="e-ppl-face" />}
+          </span>
+        )}
+        <h2>{t.compareTitle}</h2>
+        <p className="e-lead e-cmp-lead">{t.compareLead}</p>
+      </div>
+
+      <div className="e-ppl-side">
+        <div className="e-ppl-form">
+          <div className="e-ppl-field">
+            <span className="e-ppl-cap">{t.compareFieldCaption}</span>
+            <div className="e-cmpa-search">
+              <SearchIcon />
+              <CompareSearchField
+                listId="e-cmp-options"
+                query={query}
+                options={options}
+                showEmpty={showEmpty}
+                onFocus={loadCatalog}
+                onQueryChange={(value) => {
+                  loadCatalog();
+                  setQuery(value);
+                  setSelected(null);
+                }}
+                onChoose={choose}
+                placeholder={t.compareExamplePlaceholder}
+              />
+            </div>
+          </div>
+          <button className="e-btn e-btn-primary e-ppl-submit" type="button" disabled={!selected || loading} onClick={view}>
+            {loading ? t.compareLoading : t.compareView} {!loading && <ArrowIcon />}
+          </button>
+        </div>
+        {(error || catalogError) && <p className="inline-error e-ppl-note" role="alert">{t.compareLoadError}</p>}
+      </div>
+
+      {detail && (
+        <ComparisonSheet detail={detail} axes={axes} results={results} userCategory={userCategory} religion={religion} onClose={() => setDetail(null)} />
+      )}
+    </section>
+  );
+}
+
+// "Você é moralmente compatível com X": eixo com advérbio vira frase direta; os demais usam "Em {eixo}, ...".
+// As frases só afirmam proximidade/distância quando os números sustentam (ver summaryKinds).
+function AxisSummary({ kind, row, name }: { kind: 'closest' | 'farthest'; row: CompareAxisRow | null; name: string }): ReactNode {
+  if (!row) return null;
+  return (
+    <div className="e-cmp-sum-item">
+      <h3>{sentenceFor(kind, row, name)}</h3>
+      <p className="e-axis-sheet-text">{t.compareValues(row.result.leftPole, Math.round(row.user), Math.round(row.target), name)}</p>
+    </div>
+  );
+}
+
+function sentenceFor(kind: 'closest' | 'farthest', row: CompareAxisRow, name: string): string {
+  const adverb = t.compareAxisAdverbs[row.axis.id];
+  const axisName = row.result.label.toLowerCase();
+  if (kind === 'closest') {
+    return adverb ? t.compareClosestLine(adverb, name) : t.compareClosestFallback(axisName, name);
+  }
+  return adverb ? t.compareFarthestLine(adverb, name) : t.compareFarthestFallback(axisName, name);
+}
+
+function ComparisonSheet({ detail, axes, results, userCategory, religion, onClose }: {
+  detail: CompareDetail;
+  axes: Axis[];
+  results: Map<string, AxisResult>;
+  userCategory: string;
+  religion?: Religion | null;
+  onClose: () => void;
+}) {
+  const { item } = detail;
+  const summary = compareAxes(axes, results, detail.vector);
+  const kinds = summaryKinds(summary);
+  // O usuário e o perfil comparado, como "perfis" para o desenho dos eixos (o do usuário vale a cor da sua ideologia).
+  const axisProfiles: CompareProfile[] = [
+    {
+      item: { type: 'personality', id: 'you', name: t.peopleYou, caption: '', category: userCategory, historical: false, initials: t.peopleYou.slice(0, 1) },
+      vector: Object.fromEntries(axes.map((axis) => [axis.id, results.get(axis.id)?.leftPercent ?? 50])),
+      nearest: { ideology: null, country: null, party: null }
+    },
+    { item, vector: detail.vector, nearest: { ideology: null, country: null, party: null } }
+  ];
+  // A comparação completa é a página /compare/people (Você x o perfil), aberta em outra aba porque o resultado fica só na memória desta.
+  const itemReligions = profileReligions(detail.religions);
+  const fullUrl = peopleCompareUrl({
+    names: [t.peopleYou, cleanName(item.name, t.peopleOther)],
+    people: [
+      { values: axes.map((axis) => results.get(axis.id)?.leftPercent ?? 50), religion: religion ?? null },
+      {
+        values: axes.map((axis) => detail.vector[axis.id] ?? 50),
+        religion: itemReligions[0] ?? null,
+        religionFilter: itemReligions.length > 1 ? itemReligions.join(',') : null
+      }
+    ]
+  });
+
+  return (
+    <InfoSheet titleId="e-cmp-sheet-title" className="e-cmp-sheet" onClose={onClose}>
+      <div className="e-person-sheet-head">
+        <ProfileFace item={item} className="e-avatar" />
+        <div>
+          <span className="e-tag e-tag-neutral">{t.compareTypeLabels[item.type]}</span>
+          <h3 id="e-cmp-sheet-title">{item.name}</h3>
+          <p className="e-axis-sheet-label">{item.caption}</p>
+        </div>
+      </div>
+      <SheetMatch compatibility={detail.compatibility} />
+      <p className="e-axis-sheet-text">{detail.description}</p>
+
+      <div className="e-cmp-axes">
+        <p className="e-close-title">{t.compareAxesTitle}</p>
+        <AxisTagList axes={axes} profiles={axisProfiles} />
+      </div>
+
+      <div className="e-cmp-summary">
+        {kinds.identical ? (
+          <div className="e-cmp-sum-item">
+            <h3>{t.compareIdentical(item.name)}</h3>
+          </div>
+        ) : (
+          <>
+            {kinds.closest === 'close' ? (
+              <AxisSummary kind="closest" row={summary.closest} name={item.name} />
+            ) : (
+              summary.closest && (
+                <div className="e-cmp-sum-item">
+                  <h3>{t.compareNearestLine(summary.closest.result.label.toLowerCase(), item.name)}</h3>
+                </div>
+              )
+            )}
+            {kinds.farthest === 'far' ? (
+              <AxisSummary kind="farthest" row={summary.farthest} name={item.name} />
+            ) : (
+              <div className="e-cmp-sum-item">
+                <h3>{t.compareNoFarLine(item.name)}</h3>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="e-cmp-full">
+        <a className="e-btn e-btn-primary" href={fullUrl} target="_blank" rel="noopener">
+          {t.compareFullView} <ArrowIcon />
+        </a>
+      </div>
+    </InfoSheet>
+  );
+}

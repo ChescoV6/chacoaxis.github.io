@@ -1,0 +1,544 @@
+// Dicionário de UI PT/EN. O idioma é resolvido uma vez por carga de página
+// (?lang → localStorage → navigator) e trocar de idioma recarrega a página,
+// para que quiz e resultados sejam rebuscados já no idioma novo.
+import type { PersonalityCategory, ProfileDimension } from '../types/quiz';
+
+export type Lang = 'pt' | 'en';
+
+const STORAGE_KEY = '12axes-lang';
+
+// Idioma forçado pelo caminho: /en sempre inglês, /br sempre português,
+// independente do aparelho ou da preferência salva. A comparação segue o catálogo:
+// /compare em português e /en/compare em inglês.
+const normalizePath = (pathname: string): string => pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
+
+export function langForcedByPath(pathname: string): Lang | null {
+  const path = normalizePath(pathname);
+  if (path === '/en' || path === '/en/compare') return 'en';
+  if (path === '/br' || path === '/compare') return 'pt';
+  return null;
+}
+
+/** Caminho equivalente no outro idioma, para o toggle; null quando o idioma não vem do caminho. */
+export function langSwitchPath(pathname: string, lang: Lang): string | null {
+  const path = normalizePath(pathname);
+  if (path === '/compare' || path === '/en/compare') return lang === 'en' ? '/en/compare' : '/compare';
+  if (path === '/en' || path === '/br') return lang === 'en' ? '/en' : '/br';
+  return null;
+}
+
+export function resolveLang(): Lang {
+  if (typeof window === 'undefined') {
+    return 'pt';
+  }
+  const forced = langForcedByPath(window.location.pathname);
+  if (forced) {
+    return forced;
+  }
+  // No link curto de resultado (/r, do QR code) o idioma vai como "l" para o link ficar menor.
+  const query = new URLSearchParams(window.location.search);
+  const fromUrl = query.get('lang') ?? (normalizePath(window.location.pathname) === '/r' ? query.get('l') : null);
+  if (fromUrl === 'pt' || fromUrl === 'en') {
+    window.localStorage.setItem(STORAGE_KEY, fromUrl);
+    return fromUrl;
+  }
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  if (stored === 'pt' || stored === 'en') {
+    return stored;
+  }
+  return navigator.language?.toLowerCase().startsWith('pt') ? 'pt' : 'en';
+}
+
+export const LANG: Lang = resolveLang();
+
+export function setLang(lang: Lang) {
+  window.localStorage.setItem(STORAGE_KEY, lang);
+  const url = new URL(window.location.href);
+  url.searchParams.delete('lang');
+  // Em /en, /br e na comparação a URL é o que define o idioma, então o toggle troca de rota
+  // (na comparação, mantendo os perfis escolhidos na query).
+  const switched = langSwitchPath(url.pathname, lang);
+  if (switched) url.pathname = switched;
+  window.location.href = url.toString();
+}
+
+export interface QuizFormatStrings {
+  label: string;
+  questionCount: string;
+  description: string;
+  duration: string;
+  action: string;
+}
+
+export interface Strings {
+  htmlLang: string;
+  docTitle: string;
+  loadingAnalysis: string;
+  loadingQuiz: string;
+  loadingResult: string;
+  tryAgain: string;
+  crashTitle: string;
+  crashBody: string;
+  crashBodyWithProgress: string;
+  crashReload: string;
+  resumeEyebrow: string;
+  resumeTitle: string;
+  resumeBody: (answered: number, total: number) => string;
+  resumeContinue: string;
+  resumeDiscard: string;
+  resumeUnavailable: string;
+  doneEyebrow: string;
+  doneTitle: string;
+  doneBody: (name: string) => string;
+  doneView: string;
+  doneRetake: string;
+  editAnswersButton: string;
+  editAnswersTitle: string;
+  editAnswersGroupsAria: string;
+  editAnswersArchetype: string;
+  editAnswersReligion: string;
+  editAnswersChanged: (count: number) => string;
+  editAnswersCancel: string;
+  editAnswersSave: string;
+  editAnswersSaving: string;
+  editAnswersDiscard: string;
+  editAnswersLoading: string;
+  editAnswersUnavailable: string;
+  skipToContent: string;
+  backToStartAria: string;
+  mainNavAria: string;
+  navHow: string;
+  navAxes: string;
+  navSpectrum: string;
+  navFaq: string;
+  navBooks: string;
+  navIdeologies: string;
+  navPersonalities: string;
+  navCountries: string;
+  navParties: string;
+  navCompare: string;
+  navSupport: string;
+  langToggleLabel: string;
+  langToggleAria: string;
+  redoQuiz: string;
+  religionLabel: string;
+  religionQuestion: string;
+  religionNone: string;
+  religionNames: Record<'christianity' | 'judaism' | 'islam' | 'buddhism' | 'hinduism' | 'other', string>;
+  denominationLabel: string;
+  denominationQuestion: string;
+  denominationNames: Record<'catholic' | 'protestant' | 'orthodox', string>;
+  restartQuiz: string;
+  heroEyebrow: string;
+  h1Pre: string;
+  h1Em: string;
+  h1Post: string;
+  introLead: string;
+  startQuiz: string;
+  seeAxes: string;
+  heroLabels: string[];
+  heroTeaserLabel: string;
+  heroTeaserTag: string;
+  heroDeckDot: (position: number, total: number) => string;
+  heroDeckAlt: (ideology: string) => string;
+  formats: { short: QuizFormatStrings; extended: QuizFormatStrings; extreme: QuizFormatStrings };
+  axisExplanations: Record<string, string>;
+  axisInfoAria: (label: string) => string;
+  questionHelpAria: string;
+  questionHelpLabel: string;
+  themeToDarkAria: string;
+  themeToLightAria: string;
+  questionHelpTitle: string;
+  questionHelpAgree: string;
+  questionHelpDisagree: string;
+  questionHelpNote: string;
+  questionHelpExample: string;
+  closeLabel: string;
+  personalityInfoAria: (name: string) => string;
+  closenessTitle: string;
+  closenessYou: string;
+  compareEyebrow: string;
+  compareTitle: string;
+  compareLead: string;
+  compareSearchLabel: string;
+  compareSearchPlaceholder: string;
+  compareView: string;
+  compareFieldCaption: string;
+  compareFullView: string;
+  compareExamplePlaceholder: string;
+  compareAxesTitle: string;
+  compareNoResults: string;
+  compareLoading: string;
+  compareLoadError: string;
+  compareTypeLabels: Record<'personality' | 'country' | 'ideology' | 'party', string>;
+  compareAxisAdverbs: Partial<Record<string, string>>;
+  compareClosestLine: (adverb: string, name: string) => string;
+  compareFarthestLine: (adverb: string, name: string) => string;
+  compareClosestFallback: (axis: string, name: string) => string;
+  compareFarthestFallback: (axis: string, name: string) => string;
+  compareIdentical: (name: string) => string;
+  compareNearestLine: (axis: string, name: string) => string;
+  compareNoFarLine: (name: string) => string;
+  compareValues: (pole: string, you: number, them: number, name: string) => string;
+  compareOptionAria: (name: string, type: string) => string;
+  comparePageDocTitle: string;
+  comparePageEyebrow: string;
+  comparePageTitle: string;
+  comparePageProfilesTitle: string;
+  comparePageNeedMore: string;
+  comparePageFull: string;
+  comparePageRemove: string;
+  comparePageRemoveAria: (name: string) => string;
+  comparePageUnknown: string;
+  comparePageNotFound: string;
+  comparePageAxesTitle: string;
+  comparePageAxisAria: (axis: string, values: string) => string;
+  comparePageCompassAria: (points: string) => string;
+  comparePagePointAria: (name: string, right: number, authoritarian: number, traditional: number) => string;
+  comparePageLegendAria: string;
+  comparePagePairsTitle: string;
+  comparePageSignatureTitle: string;
+  comparePageIdeologyTitle: string;
+  comparePageNavIdeologies: string;
+  comparePageNavAxes: string;
+  comparePageNavSignature: string;
+  comparePageNavCountries: string;
+  comparePageNavParties: string;
+  comparePageNavCompass: string;
+  comparePageNavCompatibility: string;
+  comparePageCommonLabel: string;
+  comparePageNearestFor: (name: string) => string;
+  comparePageCountriesTitle: string;
+  comparePagePartiesTitle: string;
+  comparePageBalanced: string;
+  comparePageUnitPoints: string;
+  comparePageUnitPoint: string;
+  comparePageDivergeCap: (high: string, low: string, points: number) => string;
+  comparePageAgreeCap: (points: number) => string;
+  comparePageOpposite: string;
+  comparePageOppositeCount: (count: number, total: number) => string;
+  comparePageNoOpposite: string;
+  comparePageDiverge: string;
+  comparePageAgree: string;
+  comparePagePairLabel: string;
+  peopleTitle: string;
+  peopleLead: string;
+  peopleNameLabel: string;
+  peopleNameCaption: string;
+  peopleUrlCaption: string;
+  peopleNamePlaceholder: string;
+  peopleUrlLabel: string;
+  peopleUrlPlaceholder: string;
+  peoplePaste: string;
+  peoplePasteBlocked: string;
+  peoplePasteBlockedTouch: string;
+  peoplePasteEmpty: string;
+  peopleCompare: string;
+  peopleNameRequired: string;
+  peopleLinkMissing: (keys: string) => string;
+  peopleLinkInvalid: (keys: string) => string;
+  peopleYou: string;
+  peopleOther: string;
+  peopleBoth: string;
+  compareBoth: string;
+  peopleShare: string;
+  shareCompareLabel: string;
+  shareCompareFilePrefix: string;
+  shareCompareTitle: (percent: number) => string;
+  shareCompareMessage: (other: string, percent: number, mine: string, theirs: string, url: string) => string;
+  peopleSignatureTitle: string;
+  peopleDiverge: string;
+  peopleAgree: string;
+  peopleAgreeCap: (points: number) => string;
+  peopleOppositeCount: (count: number, total: number) => string;
+  peopleNoOpposite: string;
+  peopleBlocked: string;
+  peopleRename: (name: string) => string;
+  peopleNameInputLabel: string;
+  peopleOpenLink: string;
+  peoplePersonalitiesTitle: string;
+  peopleValuesTitle: string;
+  peopleSharedValuesTitle: string;
+  peoplePairsTitle: string;
+  peopleNavPersonalities: string;
+  peopleNavValues: string;
+  peopleNavSharedValues: string;
+  peoplePageDocTitle: string;
+  peoplePageTitle: string;
+  peoplePagePeopleTitle: string;
+  peoplePageBadLink: string;
+  peoplePageLoadError: string;
+  peoplePageLoading: string;
+  homeAxes: Record<string, { label: string; leftPole: string; rightPole: string }>;
+  spectrumItems: { id: string; label: string; tone: string; description: string }[];
+  faqItems: { question: string; answer: string }[];
+  howEyebrow: string;
+  howTitle: string;
+  howLead: string;
+  steps: { title: string; text: string }[];
+  axesGuideEyebrow: string;
+  axesGuideTitle: string;
+  axesGuideLead: string;
+  discoveryEyebrow: string;
+  discoveryTitle: string;
+  discoveryLead: string;
+  discoveryItems: { icon: string; title: string; text: string }[];
+  exampleEyebrow: string;
+  exampleTitle: string;
+  exampleCaption: string;
+  exampleCta: string;
+  spectrumEyebrow: string;
+  spectrumTitle: string;
+  spectrumLead: string;
+  faqTitle: string;
+  faqLead: string;
+  navStart: string;
+  navTakeTest: string;
+  menuAria: string;
+  roseAria: string;
+  spectrumBarAria: string;
+  versionsEyebrow: string;
+  versionsTitle: string;
+  versionsLead: string;
+  variantEyebrow: string;
+  variantTitlePre: string;
+  variantTitleEm: string;
+  backToStart: string;
+  depthLabel: string;
+  depthAria: (level: number) => string;
+  recommended: string;
+  formatNotes: string[];
+  variantLead: string;
+  quizNavAria: string;
+  autoAdvance: string;
+  swapQuestion: string;
+  swapQuestionAria: string;
+  back: string;
+  next: string;
+  calculating: string;
+  seeResult: string;
+  archetypeSkip: string;
+  errMissingAnswer: string;
+  errLoadQuiz: string;
+  errCalc: string;
+  errImage: string;
+  errHttp: (status: number) => string;
+  resultsEyebrow: string;
+  resultsH1Pre: string;
+  resultsH1Em: string;
+  resultsLead: (count: number) => string;
+  resultsLeadShared: string;
+  resultsSummaryAria: string;
+  metaTop: string;
+  axesSectionEyebrow: string;
+  axesSectionTitle: string;
+  proximityEyebrow: string;
+  otherMatches: string;
+  navOnThisPage: string;
+  resultsNavReport: string;
+  resultsNavAxes: string;
+  resultsNavSignature: string;
+  resultsNavCountries: string;
+  resultsNavParties: string;
+  resultsNavPersonalities: string;
+  resultsNavAreas: string;
+  resultsNavBooks: string;
+  resultsNavIdeologies: string;
+  resultsNavCompass: string;
+  resultsNavValues: string;
+  valuesSectionTitle: string;
+  valuesNeutralTag: string;
+  valueInfoAria: (name: string) => string;
+  compassTitle: string;
+  compassAuthoritarian: string;
+  compassLibertarian: string;
+  compassLeft: string;
+  compassRight: string;
+  compassProgressive: string;
+  compassTraditionalist: string;
+  compassWith: string;
+  compassSocialValues: string;
+  compassCenterLeft: string;
+  compassCenterRight: string;
+  compassSpectrumLabels: Record<'esq-radical' | 'esquerda' | 'centro' | 'direita' | 'ext-direita' | 'terceira' | 'libertario' | 'anarquismo', string>;
+  compassSocialLabels: Record<'veryProgressive' | 'progressive' | 'moderate' | 'traditional' | 'veryTraditional', string>;
+  compassInfo: {
+    aria: string;
+    title: string;
+    authLead: string;
+    authText: string;
+    econLead: string;
+    econText: string;
+    socialLead: string;
+    socialText: string;
+  };
+  compassNote: {
+    label: string;
+    hints: Record<'terceira' | 'ext-direita' | 'esq-radical' | 'libertarian' | 'generic', string>;
+  };
+  compassAria: (right: number, authoritarian: number, traditional: number) => string;
+  countriesSectionTitle: string;
+  countryCurrentTab: string;
+  countryHistoricalTab: string;
+  countriesDistantTitle: string;
+  partiesSectionTitle: string;
+  partyCurrentTab: string;
+  partyHistoricalTab: string;
+  partiesDistantTitle: string;
+  partyLogoAlt: (name: string) => string;
+  partyLogoUnavailable: string;
+  personalitiesSectionTitle: string;
+  personalitiesByAreaTitle: string;
+  dimensionsTitle: string;
+  dimensionLabels: Record<ProfileDimension, string>;
+  areasGeneralTitle: string;
+  booksEyebrow: string;
+  booksTitle: string;
+  booksTopLabel: string;
+  booksAuthorLabel: string;
+  booksLead: string;
+  booksWhy: (pct: number) => string;
+  booksYearBc: (year: number) => string;
+  booksCta: string;
+  areasSectionTitle: string;
+  areasTabsAria: string;
+  areasGeneralTab: string;
+  areasByAreaTab: string;
+  exportCsv: string;
+  personalitiesDistantTitle: string;
+  ideologyDistantTitle: string;
+  phraseTitle: string;
+  phraseNote: (ideology: string) => string;
+  aboutIdeology: (ideology: string) => string;
+  knowMoreAbout: (name: string) => string;
+  showLess: string;
+  matchTopKicker: string;
+  dimensionsTitleShort: string;
+  signatureTitle: string;
+  signatureUnusualLabel: string;
+  signatureCommonLabel: string;
+  signatureUnusualLead: (pole: string, percent: number) => string;
+  signatureUnusualLeadMax: (pole: string) => string;
+  signatureUnusualLeadBalanced: (axis: string, pole: string, percent: number) => string;
+  signatureUnusualNote: (axis: string) => string;
+  signatureCommonLead: (axis: string) => string;
+  signatureCommonNote: (pole: string) => string;
+  signatureCommonNoteBalanced: (axis: string) => string;
+  tensionLabel: string;
+  tensionCombo: (firstPole: string, secondPole: string) => string;
+  tensionRare: (count: number, total: number) => string;
+  tensionUnique: string;
+  tensionExamples: (names: string) => string;
+  tensionNote: (firstAxis: string, secondAxis: string) => string;
+  signatureMedian: string;
+  signatureYou: string;
+  signatureBigCap: (pole: string) => string;
+  signatureAtMedian: string;
+  signatureAtCentre: string;
+  tensionRareShort: (count: number, total: number) => string;
+  personalityCategories: Record<PersonalityCategory, string>;
+  redoAnalysis: string;
+  share: string;
+  saveOrShare: string;
+  generatingPng: string;
+  sharePreviewTitle: string;
+  sharePreviewCompareTitle: string;
+  sharePreviewAlt: string;
+  sharePreviewLoading: string;
+  downloadPdf: string;
+  generatingPdf: string;
+  report: {
+    fileName: string;
+    docLabel: string;
+    profileEyebrow: string;
+    headerLabel: (ideology: string) => string;
+    kpiCountry: string;
+    kpiPersonality: string;
+    kpiAxes: string;
+    kpiAnswered: (count: number) => string;
+    tocTitle: string;
+    generatedOn: (date: string) => string;
+    axesIntro: string;
+    intensityLegend: string;
+    intensityLevels: [string, string, string, string];
+    alsoClose: string;
+    continued: string;
+    areasIntro: string;
+    booksIntro: string;
+    aboutTitle: string;
+    aboutText: string;
+    ctaTitle: string;
+  };
+  shareFilePrefix: string;
+  shareMessage: (
+    ideology: string,
+    ideologyPct: number,
+    country: string,
+    countryPct: number,
+    personality: string,
+    personalityPct: number
+  ) => string;
+  progress: (current: number, total: number) => string;
+  progressDone: (percent: number) => string;
+  archetypeHeader: string;
+  archetypeStep: (current: number, total: number) => string;
+  progressAria: (percent: number) => string;
+  answersAria: string;
+  countryKicker: string;
+  flagLabel: string;
+  flagHistoricLabel: string;
+  flagAlt: (label: string, name: string) => string;
+  flagUnavailable: string;
+  flagUnavailableAria: (name: string) => string;
+  personalityKicker: string;
+  portraitAlt: (name: string) => string;
+  portraitUnavailableAria: (name: string) => string;
+  compatibilityAria: (pct: string) => string;
+  matchWord: string;
+  compatibilityLevels: { veryHigh: string; high: string; medium: string; low: string; veryLow: string };
+  shareTitle: string;
+  shareTopMatch: string;
+  shareCountry: string;
+  sharePersonality: string;
+  shareResultLabel: string;
+  shareMostCompatible: string;
+  shareYourAxes: string;
+  shareOtherPersonalities: string;
+  shareNearbyCountries: string;
+  shareFooterCta: string;
+  shareFooterUrl: string;
+  supportEyebrow: string;
+  supportTitle: string;
+  ossEyebrow: string;
+  ossTitle: string;
+  ossLead: string;
+  ossCards: { title: string; text: string }[];
+  ossBarText: string;
+  ossGithubCta: string;
+  footerRights: string;
+  footerProject: string;
+  footerExplore: string;
+  footerAbout: string;
+  footerContribute: string;
+  footerLicense: string;
+  footerReport: string;
+  footerFullReport: string;
+  footerTerms: string;
+  footerPrivacy: string;
+  supportTitleEm: string;
+  supportLead: string;
+  supportPrivacyNote: string;
+  supportCopy: string;
+  supportCopied: string;
+  supportCopyAria: (label: string) => string;
+  supportCoins: {
+    id: string;
+    name: string;
+    network: string;
+    address: string;
+  }[];
+}
+
+// Só o dicionário do idioma da página é baixado (trocar de idioma recarrega a página, então o outro vem nessa hora).
+// O await no topo do módulo garante que `t` já exista para quem o importa, inclusive no escopo de módulo.
+export const t: Strings = LANG === 'en' ? (await import('./en')).en : (await import('./pt')).pt;

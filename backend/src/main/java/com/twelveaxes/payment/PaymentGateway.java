@@ -1,0 +1,45 @@
+package com.twelveaxes.payment;
+
+import java.util.Optional;
+
+/**
+ * Tudo o que o backend precisa do gateway de pagamento, numa interface pequena: os testes a trocam por um duble e a
+ * implementacao real fica isolada (hoje {@link MercadoPagoGatewayImpl}). Qualquer falha de rede ou do gateway vira
+ * {@link PaymentGatewayException}.
+ */
+public interface PaymentGateway extends RefundChecker {
+    /** Um pagamento aberto: o endereco da pagina de pagamento hospedada pelo gateway. */
+    record CheckoutSession(String id, String url) {
+    }
+
+    /**
+     * Um pagamento encontrado. {@code pending} e verdadeiro enquanto o dinheiro ainda nao entrou (Pix aguardando);
+     * so um pagamento que nao esta pendente libera o relatorio. {@code email} e {@code returnUrl} (o endereco do resultado
+     * pago) so existem nos gateways que os gravam no pagamento (AbacatePay) e so servem ao e-mail de acesso; podem ser nulos.
+     */
+    record PaidPayment(String paymentRef, String vectorHash, boolean pending, String email, String returnUrl) {
+        public PaidPayment(String paymentRef, String vectorHash, boolean pending) {
+            this(paymentRef, vectorHash, pending, null, null);
+        }
+    }
+
+    /**
+     * Abre o pagamento de um resultado. O valor ({@code amount}, decimal com ponto, ex.: "14.99") e a moeda vem do
+     * servidor, nunca do navegador. O {@code nonce} e o hash do vetor ficam gravados no pagamento.
+     */
+    CheckoutSession create(String amount, String currency, String nonce, String vectorHash, String returnUrl, String lang);
+
+    /**
+     * Igual a {@link #create(String, String, String, String, String, String)}, com o e-mail que o comprador informou no site
+     * (pode ser nulo). Gateways que pedem o e-mail na propria pagina de pagamento ignoram.
+     */
+    default CheckoutSession create(String amount, String currency, String nonce, String vectorHash, String returnUrl, String lang, String email) {
+        return create(amount, currency, nonce, vectorHash, returnUrl, lang);
+    }
+
+    /** O pagamento de uma sessao devolvida pelo gateway, ou vazio. Gateways que voltam por {@code ?pay=} nao usam. */
+    Optional<PaidPayment> findBySession(String sessionId);
+
+    /** O pagamento pelo codigo da volta do pagamento ({@code ?pay=}), ou vazio se ainda nao foi encontrado. */
+    Optional<PaidPayment> findByNonce(String nonce);
+}
