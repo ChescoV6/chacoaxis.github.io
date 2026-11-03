@@ -415,7 +415,7 @@ if(sheet){const box=sheet.querySelector('.sheet');let opener=null;
 export const PROFILE_CSS = `:root{
   --papel:#F4F1E8;--floresta:#102E24;--carmim:#880912;--tinta:#101010;
   --superficie:#FBF9F3;--borda:#E2DDCF;--neutro:#ECE8DC;--texto-suave:#5B5A55;
-  --font-display:'Sora',system-ui,sans-serif;--font-body:'Poppins',system-ui,sans-serif;
+  --font-display:'Inter',system-ui,sans-serif;--font-body:'Inter',system-ui,sans-serif;
   --cat:#4B5058;--cat-bg:#DDE0E3;--r-lg:28px;--r-md:20px;
 }
 *{box-sizing:border-box;margin:0;padding:0}

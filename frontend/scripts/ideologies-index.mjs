@@ -235,7 +235,7 @@ export function ideologiesIndexPage(L, { locale, site, gaSnippet, escapeHtml, pr
     <meta name="twitter:image" content="${site}/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400..800&family=Poppins:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" />
     <link rel="stylesheet" href="/ideologies.css" />
     <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
     ${gaSnippet}
@@ -284,7 +284,7 @@ ${renderClientFilterScript({ cardSelector: '.ic', hasHistorical: false, locale }
 }
 
 export const IDEOLOGIES_CSS = `:root{--papel:#F4F1E8;--floresta:#102E24;--carmim:#880912;--tinta:#101010;--sup:#FBF9F3;--borda:#E2DDCF;--neutro:#ECE8DC;--suave:#5B5A55;
---display:'Sora',system-ui,sans-serif;--body:'Poppins',system-ui,sans-serif}
+--display:'Inter',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:150px}
 body{background:var(--papel);color:var(--tinta);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}

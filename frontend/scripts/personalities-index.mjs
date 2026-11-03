@@ -149,7 +149,7 @@ export function catalogHead(L, { site, basePath, title, description, ogType, ogI
     <meta name="twitter:image" content="${site}${ogImage}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400..800&family=Poppins:wght@400;500;600&family=Instrument+Serif&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" />
     <link rel="stylesheet" href="${css}" />
     ${ld}
     ${gaSnippet}
