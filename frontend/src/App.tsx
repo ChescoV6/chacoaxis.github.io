@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { pickReplacement, replacementCandidates, selectAllQuestionsBalanced, selectAndBalanceQuestions } from './utils/quizSelection';
 import { HOME_AXES } from './data/homeAxes';
 import type { ExampleResult } from './data/exampleResult';
-import { t } from './i18n';
+import { t, LANG } from './i18n';
 import { fetchQuiz, fetchSharedResult, submitResults } from './services/quizApi';
 import type { AnswerValue, ArchetypeQuestion, QuizPayload, QuizResult, QuizVariant } from './types/quiz';
 import { HomeScreen } from './components/editorial/HomeScreen';
@@ -13,6 +13,8 @@ import { useScrollReveal } from './hooks/useScrollReveal';
 import { useQuizTheme } from './hooks/useQuizTheme';
 import { QuizThemeToggle } from './components/QuizThemeToggle';
 import { loadLastResult, saveLastResult, type LastResult } from './utils/lastResult';
+import { saveHistoryEntry } from './utils/testHistory';
+import { detectChacoism, type ChacoismMatch } from './utils/chacoismEasterEgg';
 import { parseShortResult, SHORT_RESULT_PATH } from './utils/shortLinks';
 import type { AnswerSet } from './utils/editAnswers';
 import { CHRISTIAN_DENOMINATIONS, parseReligion, type Religion } from './utils/religion';
@@ -28,8 +30,9 @@ import {
 } from './utils/quizProgress';
 import { InfoSheet } from './components/results/InfoSheet';
 import { RELIGION_ICONS, RELIGION_QUESTION_ICON } from './data/religionIcons';
+import { HistoryScreen } from './components/HistoryScreen';
 
-type Screen = 'home' | 'variant' | 'quiz' | 'archetype' | 'results';
+type Screen = 'home' | 'variant' | 'quiz' | 'archetype' | 'results' | 'history';
 
 // A tela de resultados (com todas as seções) só carrega quando há um resultado para mostrar: quem só abre a home
 // não baixa esse código.
@@ -239,6 +242,7 @@ function MainApp() {
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedVariant, setSelectedVariant] = useState<QuizVariant>(INITIAL_VARIANT);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const [chacoismMatch, setChacoismMatch] = useState<ChacoismMatch | null>(null);
   const [isLoading, setIsLoading] = useState(FULL_MODE || SHARED_RESULT_VALUES !== null);
   const [isSharedView, setIsSharedView] = useState(false);
   const [religion, setReligion] = useState<Religion | null>(SHARED_RELIGION);
@@ -706,6 +710,13 @@ function MainApp() {
   // o link, o nome e as respostas, para a home avisar que o teste foi feito e a edição reabrir tudo preenchido.
   function showFinishedResult(nextResult: QuizResult, chosenReligion: Religion | null, saved: SavedAnswers) {
     setResult(nextResult);
+    
+    // Check for Chacoism easter egg
+    const chacoism = detectChacoism(nextResult);
+    if (chacoism.isChacoism) {
+      setChacoismMatch(chacoism);
+    }
+    
     // Sem quiz em memória (página recarregada ou aberta pelo link), a tela de resultados só existe como visão
     // compartilhada: desligar isso aqui a faria sumir.
     setIsSharedView(quiz === null);
@@ -714,6 +725,59 @@ function MainApp() {
     const resultUrl = sharedResultUrl(nextResult, chosenReligion);
     window.history.replaceState(null, '', resultUrl);
     saveLastResult({ url: resultUrl, name: nextResult.topMatch.name, answers: saved });
+    
+    // Save to test history with all match types
+    const topPersonality = nextResult.topPersonalityMatch;
+    const topCountry = nextResult.topCountryMatch;
+    const topParty = nextResult.topPartyMatch;
+    
+    // Determine primary match type (prioritize personality > country > party > ideology)
+    let matchType: 'ideology' | 'personality' | 'country' | 'party' = 'ideology';
+    let matchName = nextResult.topMatch.name;
+    let matchSlug = nextResult.topMatch.ideologyId;
+    let imagePath: string | undefined;
+    
+    if (topPersonality && topPersonality.compatibility >= 85) {
+      matchType = 'personality';
+      matchName = topPersonality.name;
+      matchSlug = topPersonality.personalityId;
+      imagePath = topPersonality.imagePath;
+    } else if (topCountry && topCountry.compatibility >= 85) {
+      matchType = 'country';
+      matchName = topCountry.name;
+      matchSlug = topCountry.countryId;
+      imagePath = topCountry.flagPath;
+    } else if (topParty && topParty.compatibility >= 85) {
+      matchType = 'party';
+      matchName = topParty.name;
+      matchSlug = topParty.partyId;
+      imagePath = topParty.logoPath;
+    }
+    
+    saveHistoryEntry({
+      url: resultUrl,
+      matchName,
+      matchType,
+      matchSlug,
+      religion: chosenReligion || 'none',
+      scores: {
+        est: nextResult.axes[0].leftPercent,
+        rep: nextResult.axes[1].leftPercent,
+        pod: nextResult.axes[2].leftPercent,
+        eco: nextResult.axes[3].leftPercent,
+        fed: nextResult.axes[4].leftPercent,
+        sec: nextResult.axes[5].leftPercent,
+        civ: nextResult.axes[6].leftPercent,
+        soc: nextResult.axes[7].leftPercent,
+        rel: nextResult.axes[8].leftPercent,
+        pro: nextResult.axes[9].leftPercent,
+        mil: nextResult.axes[10].leftPercent,
+        nat: nextResult.axes[11].leftPercent,
+      },
+      answersRecord: saved.answers,
+      imagePath,
+    });
+    
     setLastResult(loadLastResult());
   }
 
@@ -892,6 +956,21 @@ function MainApp() {
                 <a href="#como-funciona">{t.navHow}</a>
                 <a href="#guia-eixos">{t.navAxes}</a>
                 <CatalogLinks showCompare={false} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScreen('history');
+                    setIsMenuOpen(false);
+                  }}
+                  className="e-nav-history-btn"
+                  aria-label={t.historyTitle}
+                  title={t.historyTitle}
+                >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="10" cy="10" r="8" />
+                    <path d="M10 5v5l3 3" />
+                  </svg>
+                </button>
                 <LangToggle />
               </NavLinks>
               <button className="e-btn e-btn-primary e-btn-sm" type="button" onClick={openVariantChooser}>
@@ -1148,6 +1227,7 @@ function MainApp() {
             religion={religion}
             onEditAnswers={editableAnswers ? () => void openEditAnswers() : undefined}
             premiumAnswers={editableAnswers}
+            chacoismMatch={chacoismMatch}
           />
         </Suspense>
       )}
@@ -1182,6 +1262,8 @@ function MainApp() {
           )}
         </Suspense>
       )}
+
+      {screen === 'history' && <HistoryScreen onClose={goHome} lang={LANG} />}
 
       {(screen === 'home' || screen === 'variant' || screen === 'results') && <SiteFooter />}
     </div>

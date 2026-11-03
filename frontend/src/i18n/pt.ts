@@ -775,5 +775,24 @@ export const pt: Strings = {
       address:
         '85Du1EuRPkybMVXTVptC6z31dsGPpTthsiMKM3yjY7YE24BUCkyNMd9Q82kwe5CvE7BegtDTNxaG8VwYdVvTgbjDU6DpuN1'
     }
-  ]
+  ],
+
+  // History
+  historyTitle: 'Histórico de testes',
+  historyEmpty: 'Nenhum teste realizado ainda. Complete o questionário para começar seu histórico.',
+  historyCount: (n: number) => `${n} ${n === 1 ? 'resultado' : 'resultados'} salvos`,
+  historyClearAll: 'Limpar tudo',
+  historyDelete: 'Excluir',
+  historyDeleteConfirm: 'Tem certeza que deseja excluir este resultado?',
+  historyDeleteYes: 'Excluir',
+  historyDeleteNo: 'Cancelar',
+  historyClearConfirm: 'Limpar todo o histórico?',
+  historyClearConfirmBody: 'Todos os seus resultados salvos serão permanentemente excluídos.',
+  historyClearYes: 'Limpar tudo',
+  historyClearNo: 'Cancelar',
+  historyViewResult: 'Ver resultado',
+  historyMatchIdeology: 'Ideologia',
+  historyMatchPersonality: 'Personalidade',
+  historyMatchCountry: 'País',
+  historyMatchParty: 'Partido'
 };

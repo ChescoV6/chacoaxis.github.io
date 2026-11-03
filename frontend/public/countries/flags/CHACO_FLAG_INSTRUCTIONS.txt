@@ -1,0 +1,18 @@
+CHACOISM FLAG SETUP
+===================
+
+About Chacoism:
+Chacoism is a Third Position ideology named after the person Chesco. It represents
+an extreme synthesis of ultranationalism, authoritarianism, and state control.
+
+To add the flag:
+
+1. Save the Chaco flag image as:
+   chaco.png
+
+2. Place it in this directory:
+   frontend/public/countries/flags/chaco.png
+
+The image should be the green-white-red tricolor with the eagle and fasces symbol in the center.
+
+The system will automatically load it when someone achieves Chacoism results (85%+ match)!

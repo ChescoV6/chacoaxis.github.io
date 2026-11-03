@@ -1,42 +1,20 @@
 services:
   - type: web
-    name: 12axes-backend
+    name: chacoaxis-backend
     runtime: docker
-    rootDir: backend
-    plan: starter
-    healthCheckPath: /api/health
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     envVars:
+      - key: PORT
+        value: 8080
       - key: FRONTEND_ORIGINS
-        value: https://12axes.vercel.app,https://12axes.com.br,https://12axes.enzoxavier.com.br
+        value: https://chacoaxis.vercel.app,https://frontend-tan-two-78.vercel.app
       - key: API_ORIGIN_ENFORCEMENT
-        value: "true"
-      - key: API_REQUIRE_FETCH_METADATA
-        value: "false"
-
-      # Relatório completo (pago). Nenhum valor mora no repositório: sync:false = preencher no painel do Render.
-      # Sem PAYMENTS_ENABLED (ou "false") os endpoints de compra respondem 404, mesmo com o código publicado.
+        value: true
+      - key: API_RATE_LIMIT_ENABLED
+        value: true
       - key: PAYMENTS_ENABLED
-        sync: false
-      # Chave secreta da Stripe. Em produção: chave RESTRITA (rk_live_) com Checkout Sessions (escrita), Payment Intents (leitura)
-      # e Charges (leitura). Em teste: rk_test_ ou sk_test_ do sandbox.
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      # ID do preço de R$ 14,99 (price_...), do mesmo ambiente (teste ou produção) da chave acima.
-      - key: STRIPE_PRICE_ID_BRL
-        sync: false
-      # E-mail com o acesso ao relatório, enviado quando a AbacatePay avisa o pagamento (webhook). Nenhum valor mora no repositório.
-      # Resend: chave de API e remetente de um domínio verificado ("12 Axes <relatorio@seudominio>"); MAIL_REPLY_TO é opcional.
-      - key: RESEND_API_KEY
-        sync: false
-      - key: MAIL_FROM
-        sync: false
-      - key: MAIL_REPLY_TO
-        sync: false
-      # Segredo do webhook: o mesmo valor que vai no endereço cadastrado no painel da AbacatePay (?webhookSecret=...).
-      - key: ABACATEPAY_WEBHOOK_SECRET
-        sync: false
-      # Segredo que assina os tokens de acesso. O Render gera um valor aleatório na criação; trocá-lo invalida todos os acessos.
-      - key: ENTITLEMENT_SECRET
-        generateValue: true
-      # NUNCA definir PREMIUM_DEV_OPEN aqui: abre o relatório pago sem pagamento (só vale para a própria máquina, mas não tem uso em produção).
-
+        value: false
+    plan: free
+    region: oregon
+    autoDeploy: true

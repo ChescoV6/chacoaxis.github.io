@@ -27,6 +27,8 @@ import type { Religion } from '../../utils/religion';
 import { CsvIcon, DownloadIcon, Ring, ShareImageIcon } from './primitives';
 import { track } from '../../utils/analytics';
 import { downloadRankingXlsx } from '../../utils/rankingXlsx';
+import type { ChacoismMatch } from '../../utils/chacoismEasterEgg';
+import { ChacoismEasterEgg } from '../ChacoismEasterEgg';
 
 const PremiumReportSection = lazy(() => import('../results/premium/PremiumReportSection'));
 
@@ -43,9 +45,11 @@ interface ResultsScreenProps {
   onEditAnswers?: () => void;
   /** Respostas deste resultado, quando este navegador as tem: o relatório usa para mostrar o que mais pesou em cada eixo. */
   premiumAnswers?: SavedAnswers | null;
+  /** Chacoism easter egg match, when extreme Third Position scores detected */
+  chacoismMatch?: ChacoismMatch | null;
 }
 
-export function ResultsScreen({ result, quiz, axes, axisResults, isSharing, error, onShare, religion, onEditAnswers, premiumAnswers }: ResultsScreenProps) {
+export function ResultsScreen({ result, quiz, axes, axisResults, isSharing, error, onShare, religion, onEditAnswers, premiumAnswers, chacoismMatch }: ResultsScreenProps) {
   const top = result.topMatch;
   const showParties = PARTIES_ENABLED && (result.topPartyMatches?.length ?? 0) > 0;
   const politicalValues = result.politicalValues ?? [];
@@ -138,6 +142,8 @@ export function ResultsScreen({ result, quiz, axes, axisResults, isSharing, erro
             </div>
             <PhraseSection match={top} />
           </article>
+
+          {chacoismMatch?.isChacoism && <ChacoismEasterEgg match={chacoismMatch} />}
 
           <AxesSection axes={axes} results={axisResults} religion={religion} onEditAnswers={onEditAnswers} />
 

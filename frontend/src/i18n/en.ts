@@ -786,5 +786,24 @@ export const en: Strings = {
       address:
         '85Du1EuRPkybMVXTVptC6z31dsGPpTthsiMKM3yjY7YE24BUCkyNMd9Q82kwe5CvE7BegtDTNxaG8VwYdVvTgbjDU6DpuN1'
     }
-  ]
+  ],
+
+  // History
+  historyTitle: 'Test History',
+  historyEmpty: 'No tests taken yet. Complete the quiz to start your history.',
+  historyCount: (n: number) => `${n} ${n === 1 ? 'result' : 'results'} saved`,
+  historyClearAll: 'Clear all',
+  historyDelete: 'Delete',
+  historyDeleteConfirm: 'Are you sure you want to delete this result?',
+  historyDeleteYes: 'Delete',
+  historyDeleteNo: 'Cancel',
+  historyClearConfirm: 'Clear all history?',
+  historyClearConfirmBody: 'All your saved results will be permanently deleted.',
+  historyClearYes: 'Clear all',
+  historyClearNo: 'Cancel',
+  historyViewResult: 'View result',
+  historyMatchIdeology: 'Ideology',
+  historyMatchPersonality: 'Personality',
+  historyMatchCountry: 'Country',
+  historyMatchParty: 'Party'
 };

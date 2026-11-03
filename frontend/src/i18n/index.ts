@@ -537,6 +537,23 @@ export interface Strings {
     network: string;
     address: string;
   }[];
+  historyTitle: string;
+  historyEmpty: string;
+  historyCount: (n: number) => string;
+  historyClearAll: string;
+  historyDelete: string;
+  historyDeleteConfirm: string;
+  historyDeleteYes: string;
+  historyDeleteNo: string;
+  historyClearConfirm: string;
+  historyClearConfirmBody: string;
+  historyClearYes: string;
+  historyClearNo: string;
+  historyViewResult: string;
+  historyMatchIdeology: string;
+  historyMatchPersonality: string;
+  historyMatchCountry: string;
+  historyMatchParty: string;
 }
 
 // Só o dicionário do idioma da página é baixado (trocar de idioma recarrega a página, então o outro vem nessa hora).

@@ -1,7 +1,12 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
   "framework": "vite",
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
+  },
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [{ "source": "/((?!assets/)[^.]*)", "destination": "/" }],
