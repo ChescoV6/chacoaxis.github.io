@@ -578,7 +578,7 @@ function TreeView({
     // Nomes das regiões quando está longe
     const catAlpha = Math.max(0, Math.min(1, 1.9 - z));
     if (catAlpha > 0.02) {
-      ctx.font = '700 15px Sora, Poppins, sans-serif';
+      ctx.font = '700 15px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (const c of categoryCenters) {
@@ -596,7 +596,7 @@ function TreeView({
     }
 
     // Rótulos: prioridade por importância, com anti-colisão; foco sempre aparece.
-    ctx.font = '500 12px Poppins, sans-serif';
+    ctx.font = '500 12px Inter, sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     const placed: [number, number, number, number][] = [];

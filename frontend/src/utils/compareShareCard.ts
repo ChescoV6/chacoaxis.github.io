@@ -534,14 +534,12 @@ async function loadCompareFonts(): Promise<void> {
     return;
   }
   await Promise.allSettled([
-    document.fonts.load('400 30px "Poppins"'),
-    document.fonts.load('500 30px "Poppins"'),
-    document.fonts.load('600 30px "Poppins"'),
-    document.fonts.load('700 18px "Poppins"'),
-    document.fonts.load('600 22px "Poppins"'),
-    document.fonts.load('600 30px "Sora"'),
-    document.fonts.load('700 30px "Sora"'),
-    document.fonts.load('800 30px "Sora"')
+document.fonts.load('400 30px "Inter"'),
+document.fonts.load('500 30px "Inter"'),
+document.fonts.load('600 30px "Inter"'),
+document.fonts.load('700 18px "Inter"'),
+document.fonts.load('600 22px "Inter"'),
+document.fonts.load('700 30px "Inter"')
   ]);
   await document.fonts.ready;
 }

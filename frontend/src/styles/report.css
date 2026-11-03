@@ -12,7 +12,7 @@
 }
 
 .rp{--papel:#F4F1E8;--floresta:#102E24;--carmim:#880912;--tinta:#101010;--sup:#FBF9F3;--borda:#E2DDCF;--neutro:#ECE8DC;--suave:#5B5A55;
-  --display:'Sora',sans-serif;--body:'Poppins',sans-serif;--ring:var(--cat);--ring-bg:#E2DDCF;
+  --display:'Inter',sans-serif;--body:'Inter',sans-serif;--ring:var(--cat);--ring-bg:#E2DDCF;
   -webkit-print-color-adjust:exact;print-color-adjust:exact;text-rendering:geometricPrecision;
   background:var(--papel);font-family:var(--body);color:var(--tinta);font-size:10.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .rp *{box-sizing:border-box;margin:0;padding:0}

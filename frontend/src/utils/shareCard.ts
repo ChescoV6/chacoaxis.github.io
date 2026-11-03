@@ -19,8 +19,8 @@ import { shortResultUrl } from './shortLinks';
 export const SHARE_WIDTH = 1080;
 export const SHARE_HEIGHT = 1920;
 
-export const SHARE_FONT_DISPLAY = '"Sora"';
-export const SHARE_FONT_BODY = '"Poppins"';
+export const SHARE_FONT_DISPLAY = '"Inter"';
+export const SHARE_FONT_BODY = '"Inter"';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export const SHARE_COLORS = {
@@ -207,7 +207,7 @@ export function buildShareHeader(label: string = t.shareResultLabel): HTMLElemen
   header.append(
     el('div', {
       fontFamily: SHARE_FONT_DISPLAY,
-      fontWeight: '800',
+      fontWeight: '700',
       fontSize: '58px',
       letterSpacing: '-0.03em',
       color: P,

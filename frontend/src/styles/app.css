@@ -11775,7 +11775,7 @@
   position: absolute;
   right: clamp(20px, 3vw, 36px);
   top: clamp(8px, 1.8vh, 18px);
-  font-family: 'Sora', var(--font-display), system-ui, sans-serif;
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: clamp(64px, 12vh, 132px);
   line-height: 1;

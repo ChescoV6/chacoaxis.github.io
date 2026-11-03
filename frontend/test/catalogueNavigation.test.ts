@@ -23,7 +23,13 @@ describe('local catalogue navigation', () => {
     await response.text();
   }, 60_000);
 
-  afterAll(async () => { await server?.close(); });
+  afterAll(async () => {
+    server?.httpServer?.closeAllConnections();
+    // Under a full parallel run the Vite teardown can wait on the shared dependency
+    // optimizer; the worker exits after this hook, so do not block the suite on it.
+    const closing = server ? server.close() : Promise.resolve();
+    await Promise.race([closing, new Promise<void>((resolve) => setTimeout(resolve, 5_000))]);
+  }, 15_000);
 
   it.each(['ideologies', 'personalities', 'countries'])('serves %s in both languages instead of the quiz homepage', async (catalogue) => {
     for (const prefix of ['', 'en/']) {

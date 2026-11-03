@@ -5,6 +5,7 @@
 
 import type { ChacoismMatch } from '../utils/chacoismEasterEgg';
 import { CHACOISM_IDEOLOGY, getChacoismFlagPath } from '../utils/chacoismEasterEgg';
+import { localAssetUrl } from '../utils/assetUrl';
 import { resolveCountryFlagSrc } from '../utils/countryFlags';
 
 interface ChacoismEasterEggProps {
@@ -27,7 +28,14 @@ export function ChacoismEasterEgg({ match }: ChacoismEasterEggProps) {
             alt="Chacoism Flag" 
             className="e-chacoism-flag"
             onError={(e) => {
-              e.currentTarget.style.display = 'none';
+              const image = e.currentTarget;
+              const currentSrc = image.getAttribute('src') ?? '';
+              const localSrc = localAssetUrl(currentSrc);
+              if (localSrc !== currentSrc) {
+                image.src = localSrc;
+                return;
+              }
+              image.closest('.e-chacoism-flag-wrap')?.setAttribute('hidden', '');
             }}
           />
         </div>
