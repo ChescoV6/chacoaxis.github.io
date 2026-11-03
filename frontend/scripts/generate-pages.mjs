@@ -22,7 +22,9 @@ import { cdnifyHtml, cdnifyShareImage } from './cdn.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const DATA_DIR = resolve(ROOT, '../backend/src/main/resources/data');
+const BACKEND_DATA_DIR = resolve(ROOT, '../backend/src/main/resources/data');
+const SNAPSHOT_DATA_DIR = resolve(__dirname, 'data');
+const DATA_DIR = existsSync(join(BACKEND_DATA_DIR, 'axes.json')) ? BACKEND_DATA_DIR : SNAPSHOT_DATA_DIR;
 const CATALOGUE_ONLY = process.argv.includes('--catalogue-only');
 const DIST = join(ROOT, CATALOGUE_ONLY ? 'node_modules/.cache/catalogue-pages' : 'dist');
 const SITE = 'https://12axes.vercel.app';

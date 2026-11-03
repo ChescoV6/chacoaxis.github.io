@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build && node scripts/generate-pages.mjs",
     "build:vercel": "tsc --noEmit && vite build",
     "generate:pages": "node scripts/generate-pages.mjs",
+    "sync:data": "node scripts/sync-data.mjs",
     "optimize:images": "node scripts/optimize-images.mjs",
     "square:logo": "node scripts/square-logo.mjs",
     "preview": "vite preview",
