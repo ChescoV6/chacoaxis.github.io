@@ -2,7 +2,7 @@
 // na Vercel todo pedido e todo byte entregue são cobrados, e o HTML só precisa dela porque o endereço do site é o dela.
 // VITE_ASSETS_CDN vazio (build local): nada muda, tudo continua relativo ao próprio site.
 const CDN = (process.env.VITE_ASSETS_CDN ?? '').trim().replace(/\/+$/, '');
-const SITE = 'https://12axes.vercel.app';
+const SITE = 'https://12axesfree.vercel.app';
 
 // Pastas de public/ que moram na CDN, mais o logo usado nas metatags de compartilhamento.
 const ASSET_DIRS = 'personalities/portraits|countries/flags|parties/logos|share-examples|candidates';

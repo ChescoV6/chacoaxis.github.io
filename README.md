@@ -4,7 +4,7 @@
 
 A political quiz that places you on twelve independent axes and compares your answers with +230 ideologies, +170 countries and regimes, and +390 political figures.
 
-**[12axes.vercel.app](https://12axes.vercel.app)** · Portuguese and English · no sign-up
+**[12axesfree.vercel.app](https://12axesfree.vercel.app)** · Portuguese and English · no sign-up
 
 ![Java](https://img.shields.io/badge/Java-21-orange) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F) ![React](https://img.shields.io/badge/React-18-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6) ![CI](https://github.com/RomanCypherpunk/12axes/actions/workflows/ci.yml/badge.svg)
 

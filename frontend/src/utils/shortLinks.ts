@@ -1,7 +1,7 @@
 import { parseReligion, type Religion } from './religion';
 
 /** Origem pública do site: o QR do cartão aponta para ela, não para o endereço de onde a pessoa gerou a imagem. */
-export const PUBLIC_ORIGIN = 'https://12axes.vercel.app';
+export const PUBLIC_ORIGIN = 'https://12axesfree.vercel.app';
 
 /** Caminho do link curto de resultado: /r?v=70-80-20-… (os 12 eixos, % do polo esquerdo, separados por traço). */
 export const SHORT_RESULT_PATH = '/r';

@@ -27,7 +27,7 @@ const SNAPSHOT_DATA_DIR = resolve(__dirname, 'data');
 const DATA_DIR = existsSync(join(BACKEND_DATA_DIR, 'axes.json')) ? BACKEND_DATA_DIR : SNAPSHOT_DATA_DIR;
 const CATALOGUE_ONLY = process.argv.includes('--catalogue-only');
 const DIST = join(ROOT, CATALOGUE_ONLY ? 'node_modules/.cache/catalogue-pages' : 'dist');
-const SITE = 'https://12axes.vercel.app';
+const SITE = 'https://12axesfree.vercel.app';
 const GOOGLE_ANALYTICS_SNIPPET = `<!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-JF63DF6BNM"></script>
     <script>
@@ -329,10 +329,10 @@ function buildHomeVariants() {
     <meta name="application-name" content="12 Axes" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="language" content="English" />
-    <link rel="canonical" href="https://12axes.vercel.app/en" />
-    <link rel="alternate" hreflang="pt-BR" href="https://12axes.vercel.app/" />
-    <link rel="alternate" hreflang="en" href="https://12axes.vercel.app/en" />
-    <link rel="alternate" hreflang="x-default" href="https://12axes.vercel.app/en" />
+    <link rel="canonical" href="https://12axesfree.vercel.app/en" />
+    <link rel="alternate" hreflang="pt-BR" href="https://12axesfree.vercel.app/" />
+    <link rel="alternate" hreflang="en" href="https://12axesfree.vercel.app/en" />
+    <link rel="alternate" hreflang="x-default" href="https://12axesfree.vercel.app/en" />
 
     `;
 
@@ -340,13 +340,13 @@ function buildHomeVariants() {
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="12 Axes" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:url" content="https://12axes.vercel.app/en" />
+    <meta property="og:url" content="https://12axesfree.vercel.app/en" />
     <meta property="og:title" content="12 Axes — Free Political Test, Quiz & Compass Across 12 Axes" />
     <meta
       property="og:description"
       content="A complete, free political quiz: find your political ideology, compatible country and political figure across 12 axes, with a political compass and full spectrum."
     />
-    <meta property="og:image" content="https://12axes.vercel.app/logo.png" />
+    <meta property="og:image" content="https://12axesfree.vercel.app/logo.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
     <meta property="og:image:alt" content="12 Axes logo — a 12-axis political test" />
@@ -360,7 +360,7 @@ function buildHomeVariants() {
       name="twitter:description"
       content="A free, fast political test: find your ideology, country and political figure match across 12 axes, with a political compass."
     />
-    <meta name="twitter:image" content="https://12axes.vercel.app/logo.png" />
+    <meta name="twitter:image" content="https://12axesfree.vercel.app/logo.png" />
 
     `;
 
@@ -369,7 +369,7 @@ function buildHomeVariants() {
     '@type': 'WebApplication',
     name: '12 Axes',
     alternateName: ['12 Axes Political Quiz', '12 Axes Ideology Test', '12 Axes Political Test', '12 Axes Political Compass', '12 Axes Quiz'],
-    url: 'https://12axes.vercel.app/en',
+    url: 'https://12axesfree.vercel.app/en',
     description:
       'A free, fast and complete political test and ideology quiz that maps your position across 12 axes and shows your compatible ideology, country and political figure, with a political compass and spectrum.',
     applicationCategory: 'EducationApplication',
@@ -377,9 +377,9 @@ function buildHomeVariants() {
     inLanguage: 'en',
     isAccessibleForFree: true,
     copyrightYear: 2026,
-    copyrightHolder: { '@type': 'Organization', name: '12 Axes', url: 'https://12axes.vercel.app/' },
+    copyrightHolder: { '@type': 'Organization', name: '12 Axes', url: 'https://12axesfree.vercel.app/' },
     license: 'https://github.com/RomanCypherpunk/12axes/blob/main/LICENSE',
-    image: 'https://12axes.vercel.app/logo.png',
+    image: 'https://12axesfree.vercel.app/logo.png',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     keywords:
       'political test, free political test, political quiz, ideology test, political ideology, find your ideology, find your compatible ideology, find your compatible country, find your compatible political figure, political spectrum, political compass, political coordinates, political compass test, 12 axes, 12 axes political test, 12axes, 12 axes quiz, left, right, center, liberalism, conservatism, progressivism, libertarianism, socialism, capitalism',
@@ -447,7 +447,7 @@ function buildHomeVariants() {
     '@type': 'WebSite',
     name: '12 Axes',
     alternateName: ['12 Eixos', '12axes', '12 Axes Political Test'],
-    url: 'https://12axes.vercel.app/en',
+    url: 'https://12axesfree.vercel.app/en',
     inLanguage: ['en', 'pt-BR']
   };
 

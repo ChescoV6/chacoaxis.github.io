@@ -110,8 +110,8 @@ const PAGES = {
 };
 
 const LABELS = {
-  pt: { report: 'Relatório Completo', terms: 'Termos de uso', privacy: 'Privacidade', updated: 'Atualizado em', skip: 'Pular para o conteúdo', footer: 'Quiz político independente · 12axes.vercel.app · © 2026. Todos os direitos reservados' },
-  en: { report: 'Full Report', terms: 'Terms of use', privacy: 'Privacy', updated: 'Updated', skip: 'Skip to content', footer: 'Independent political quiz · 12axes.vercel.app · © 2026. All rights reserved' }
+  pt: { report: 'Relatório Completo', terms: 'Termos de uso', privacy: 'Privacidade', updated: 'Atualizado em', skip: 'Pular para o conteúdo', footer: 'Quiz político independente · 12axesfree.vercel.app · © 2026. Todos os direitos reservados' },
+  en: { report: 'Full Report', terms: 'Terms of use', privacy: 'Privacy', updated: 'Updated', skip: 'Skip to content', footer: 'Independent political quiz · 12axesfree.vercel.app · © 2026. All rights reserved' }
 };
 
 function body(paragraphs, escapeHtml) {

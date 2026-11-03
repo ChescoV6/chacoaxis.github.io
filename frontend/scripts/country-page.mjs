@@ -57,7 +57,7 @@ const STR = {
     matchWord: 'match',
     ctaTitle: 'Você viveria bem aqui?',
     ctaText: (name, n) => `Responda ao quiz e veja sua compatibilidade com ${name} e outros ${n} países e regimes nos 12 eixos.`,
-    footer: 'Quiz político independente · 12axes.vercel.app · © 2026. Todos os direitos reservados'
+    footer: 'Quiz político independente · 12axesfree.vercel.app · © 2026. Todos os direitos reservados'
   },
   en: {
     skip: 'Skip to content',
@@ -107,7 +107,7 @@ const STR = {
     matchWord: 'match',
     ctaTitle: 'Would you live well here?',
     ctaText: (name, n) => `Take the quiz and see your compatibility with ${name} and ${n} other countries and regimes across the 12 axes.`,
-    footer: 'Independent political quiz · 12axes.vercel.app · © 2026. All rights reserved'
+    footer: 'Independent political quiz · 12axesfree.vercel.app · © 2026. All rights reserved'
   }
 };
 

@@ -53,7 +53,7 @@ const STR = {
     ctaTitle: 'Qual livro combina com suas ideias?',
     ctaText: 'Responda ao quiz de 12 eixos e receba uma lista personalizada de livros das personalidades mais compatíveis com o seu resultado.',
     takeTheTest: 'Fazer o teste',
-    footer: 'Quiz político independente · 12axes.vercel.app · © 2026. Todos os direitos reservados',
+    footer: 'Quiz político independente · 12axesfree.vercel.app · © 2026. Todos os direitos reservados',
     otherLang: { label: 'English', href: '/en/books' },
     descriptions: {
       filosofo: 'Tratados e diálogos clássicos sobre justiça, liberdade, natureza humana, ética e os fundamentos do Estado.',
@@ -94,7 +94,7 @@ const STR = {
     ctaTitle: 'Which book matches your ideas?',
     ctaText: 'Take the 12-axis quiz and receive a tailored list of books written by the political figures closest to your result.',
     takeTheTest: 'Take the test',
-    footer: 'Independent political quiz · 12axes.vercel.app · © 2026. All rights reserved',
+    footer: 'Independent political quiz · 12axesfree.vercel.app · © 2026. All rights reserved',
     otherLang: { label: 'Português', href: '/books' },
     descriptions: {
       filosofo: 'Classical treatises and dialogues on justice, liberty, human nature, ethics, and the state.',

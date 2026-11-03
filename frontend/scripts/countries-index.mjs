@@ -62,7 +62,7 @@ const STR = {
     ctaTitle: 'Em que país você se encaixaria?',
     ctaText: 'Responda ao quiz e descubra quais países e regimes históricos mais combinam com você.',
     takeTheTest: 'Fazer o teste',
-    footer: 'Quiz político independente · 12axes.vercel.app · © 2026. Todos os direitos reservados',
+    footer: 'Quiz político independente · 12axesfree.vercel.app · © 2026. Todos os direitos reservados',
     otherLang: { label: 'English', href: '/en/countries' },
     labels: {
       atuais: 'Países atuais',
@@ -107,7 +107,7 @@ const STR = {
     ctaTitle: 'Which country would you fit in?',
     ctaText: 'Take the quiz and find out which countries and historical regimes match you best.',
     takeTheTest: 'Take the test',
-    footer: 'Independent political quiz · 12axes.vercel.app · © 2026. All rights reserved',
+    footer: 'Independent political quiz · 12axesfree.vercel.app · © 2026. All rights reserved',
     otherLang: { label: 'Português', href: '/countries' },
     labels: {
       atuais: 'Modern countries',

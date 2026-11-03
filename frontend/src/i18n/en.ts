@@ -212,7 +212,7 @@ export const en: Strings = {
   peopleShare: 'Share comparison',
   shareCompareLabel: 'COMPARISON',
   shareCompareFilePrefix: '12axes-comparison',
-  shareCompareTitle: (percent) => `Our political compatibility: ${percent}% | 12axes.vercel.app`,
+  shareCompareTitle: (percent) => `Our political compatibility: ${percent}% | 12axesfree.vercel.app`,
   shareCompareMessage: (other, percent, mine, theirs, url) =>
     `I compared my political profile with ${other}'s on the 12 Axes Political Quiz!\n\n` +
     `🤝 Compatibility between us: ${percent}%\n\n` +
@@ -682,7 +682,7 @@ export const en: Strings = {
     `${country} - ${countryPct}% compatibility\n\n` +
     `👤 Most compatible personality:\n` +
     `${personality} - ${personalityPct}% compatibility\n\n` +
-    `👉 Take the test and share your result:\nhttps://12axes.vercel.app/en`,
+    `👉 Take the test and share your result:\nhttps://12axesfree.vercel.app/en`,
   progress: (current, total) => `Question ${current} of ${total}`,
   progressDone: (percent) => `${percent}% complete`,
   archetypeHeader: 'Identifying your archetype',
@@ -707,7 +707,7 @@ export const en: Strings = {
     low: 'Low compatibility',
     veryLow: 'Very low compatibility'
   },
-  shareTitle: 'My ideological profile | 12axes.vercel.app',
+  shareTitle: 'My ideological profile | 12axesfree.vercel.app',
   shareTopMatch: 'Top match',
   shareCountry: 'Most compatible country',
   sharePersonality: 'Personality',

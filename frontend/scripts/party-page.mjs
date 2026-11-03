@@ -54,7 +54,7 @@ const STR = {
     matchWord: 'match',
     ctaTitle: 'Você se identifica com este perfil?',
     ctaText: (name, n) => `Responda ao quiz e veja sua compatibilidade com ${name} e outros ${n} partidos e organizações nos 12 eixos.`,
-    footer: 'Quiz político independente · 12axes.vercel.app · © 2026. Todos os direitos reservados'
+    footer: 'Quiz político independente · 12axesfree.vercel.app · © 2026. Todos os direitos reservados'
   },
   en: {
     skip: 'Skip to content',
@@ -101,7 +101,7 @@ const STR = {
     matchWord: 'match',
     ctaTitle: 'Do you identify with this profile?',
     ctaText: (name, n) => `Take the quiz and see your compatibility with ${name} and ${n} other parties and organizations across the 12 axes.`,
-    footer: 'Independent political quiz · 12axes.vercel.app · © 2026. All rights reserved'
+    footer: 'Independent political quiz · 12axesfree.vercel.app · © 2026. All rights reserved'
   }
 };
 

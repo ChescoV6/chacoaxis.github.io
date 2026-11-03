@@ -17,8 +17,8 @@ const VALUES = [65, 32.5, 10, 90, 50, 0, 100, 44, 12, 70, 33, 51];
 
 describe('parseResultLink', () => {
   it.each([
-    ['URL completa', `https://12axes.vercel.app/results?${QUERY}`],
-    ['URL em inglês', `https://12axes.vercel.app/en/results?${QUERY}&lang=en`],
+    ['URL completa', `https://12axesfree.vercel.app/results?${QUERY}`],
+    ['URL em inglês', `https://12axesfree.vercel.app/en/results?${QUERY}&lang=en`],
     ['só o caminho', `/results?${QUERY}`],
     ['só a query com ?', `?${QUERY}`],
     ['só os parâmetros', QUERY],
@@ -43,7 +43,7 @@ describe('parseResultLink', () => {
 
   it('aceita o link curto do cartão (/r?v=...)', () => {
     const short = 'v=65-32.5-10-90-50-0-100-44-12-70-33-51';
-    expect(parseResultLink(`https://12axes.vercel.app/r?${short}`)).toEqual({ ok: true, values: VALUES, religion: null });
+    expect(parseResultLink(`https://12axesfree.vercel.app/r?${short}`)).toEqual({ ok: true, values: VALUES, religion: null });
     expect(parseResultLink(`/r?${short}&r=c&l=en`)).toMatchObject({ ok: true, values: VALUES, religion: 'catholic' });
   });
 

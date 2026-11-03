@@ -65,7 +65,7 @@ const STR = {
     ctaTitle: 'E você, onde se encaixa?',
     ctaText: (n) => `Responda ao quiz e veja com quais dessas ${n} ideologias você é mais compatível.`,
     takeTheTest: 'Fazer o teste',
-    footer: 'Quiz político independente · 12axes.vercel.app · © 2026. Todos os direitos reservados',
+    footer: 'Quiz político independente · 12axesfree.vercel.app · © 2026. Todos os direitos reservados',
     otherLang: { label: 'English', href: '/en/ideologies' },
     descriptions: {
       'esq-radical': 'Comunismo revolucionário ou de partido único, com economia planificada e forte concentração do poder do Estado.',
@@ -102,7 +102,7 @@ const STR = {
     ctaTitle: 'And you, where do you fit?',
     ctaText: (n) => `Take the quiz and see which of these ${n} ideologies you are most compatible with.`,
     takeTheTest: 'Take the test',
-    footer: 'Independent political quiz · 12axes.vercel.app · © 2026. All rights reserved',
+    footer: 'Independent political quiz · 12axesfree.vercel.app · © 2026. All rights reserved',
     otherLang: { label: 'Português', href: '/ideologies' },
     descriptions: {
       'esq-radical': 'Revolutionary or one-party communism, with a planned economy and strong concentration of state power.',
